@@ -1,4 +1,3 @@
-const assert = require('assert');
 import * as vscode from 'vscode';
 import { TeletypeClient, Errors, Portal, FollowState, EditorProxy, BufferProxy } from '@atom/teletype-client';
 import BufferBinding from './BufferBinding';
@@ -7,6 +6,7 @@ import EditorBinding from './EditorBinding';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
+let fsPromises = fs.promises;
 
 export default class PortalBinding {
 	public client: TeletypeClient;
@@ -55,7 +55,7 @@ export default class PortalBinding {
 			vscode.window.showInformationMessage('Joined Portal with ID' + ' ' + this.portalId + ' ');			
 			this.registerWorkspaceEvents();
 		} catch (error) {
-			vscode.window.showErrorMessage('Unable to join the Portal with ID' + ' ' + this.portalId + ' ');
+			vscode.window.showErrorMessage('Unable to join the Portal with ID' + ' ' + this.portalId + ' error='+error);
 		}
 	}
 
@@ -133,11 +133,12 @@ export default class PortalBinding {
 		if (typeof this.onRemoveEditorProxy === "function") {
 			this.onRemoveEditorProxy(editorProxy);
 		}
-		assert(this.editorProxies.has(editorProxy), 'Can only remove editor proxies that had previously been added');
-		this.editorProxies.delete(editorProxy);
-		if (this.tetherEditorProxy === editorProxy) {
-			this.tetherEditorProxy = null;
-			this.tetherEditorProxyChangeCounter++;
+		if(this.editorProxies.has(editorProxy)) {
+			this.editorProxies.delete(editorProxy);
+			if (this.tetherEditorProxy === editorProxy) {
+				this.tetherEditorProxy = null;
+				this.tetherEditorProxyChangeCounter++;
+			}
 		}
 	}
 
@@ -163,15 +164,16 @@ export default class PortalBinding {
 			this.lastEditorProxyChangePromise = this.lastEditorProxyChangePromise.then(() =>
 				this.onUpdateTether(state, editorProxy, position)
 			);
+		
+			console.log("updateTether: " + editorProxy.bufferProxy.uri);
+			this.addEditorProxy(editorProxy);
+			this.tetherState = state;
+			if (editorProxy !== this.tetherEditorProxy) {
+				this.tetherEditorProxy = editorProxy;
+				this.tetherEditorProxyChangeCounter++;
+			}
+			this.tetherPosition = position;
 		}
-		console.log("updateTether: " + editorProxy.bufferProxy.uri);
-		this.addEditorProxy(editorProxy);
-		this.tetherState = state;
-		if (editorProxy !== this.tetherEditorProxy) {
-			this.tetherEditorProxy = editorProxy;
-			this.tetherEditorProxyChangeCounter++;
-		}
-		this.tetherPosition = position;
 	}
 	
 	
@@ -234,8 +236,10 @@ export default class PortalBinding {
 		if (bufferBinding) {
 			buffer = bufferBinding.buffer;
 		} else {
-			const bufferURI = vscode.Uri.parse(`file://${path.join(os.tmpdir(), `/${this.portalId}/`, bufferProxy.uri)}`);
-			await require('mkdirp-promise')(path.dirname(bufferURI.fsPath));
+			const bufferPath = path.join(os.tmpdir(),`/${this.portalId}/`, bufferProxy.uri);
+
+			const bufferURI = vscode.Uri.parse(this.fileUrl(bufferPath));
+			await fsPromises.mkdir(path.dirname(bufferURI.fsPath), {recursive: true});
 			fs.writeFileSync(bufferURI.fsPath, '');
 
 			buffer = await vscode.workspace.openTextDocument(bufferURI);
@@ -278,4 +282,15 @@ export default class PortalBinding {
 	}
 
 	didChangeEditorProxies() { }
+
+	fileUrl(str : string) {	
+		var pathName = path.resolve(str).replace(/\\/g, '/');
+	
+		// Windows drive letter must be prefixed with a slash
+		if (pathName[0] !== '/') {
+			pathName = '/' + pathName;
+		}
+	
+		return encodeURI('file://' + pathName);
+	};
 }
