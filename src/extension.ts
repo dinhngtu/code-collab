@@ -1,7 +1,7 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import { TeletypeClient } from '@atom/teletype-client';
+import { Portal, TeletypeClient } from '@atom/teletype-client';
 import PortalBinding from './PortalBinding';
 
 
@@ -20,7 +20,20 @@ globalAny.RTCPeerConnection = wrtc.RTCPeerConnection;
 export function activate(context: vscode.ExtensionContext) {
 
 	console.log('Great, your extension "vscode-teletype" is now active!');
-	let disposable = vscode.commands.registerCommand('extension.join-portal', async () => {
+	addJoinCommand(context);
+
+	addCreateCommand(context);
+}
+
+function addCreateCommand(context: vscode.ExtensionContext) {
+	let createCommand = vscode.commands.registerCommand('extension.create-portal', async () => {
+		await createPortal();
+	});
+	context.subscriptions.push(createCommand);
+}
+
+function addJoinCommand(context: vscode.ExtensionContext) {
+	let joinCommand = vscode.commands.registerCommand('extension.join-portal', async () => {
 
 		let portalIdInput = await getPortalID();
 		if (!portalIdInput) {
@@ -32,7 +45,7 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 	});
-	context.subscriptions.push(disposable);
+	context.subscriptions.push(joinCommand);
 }
 
 async function getPortalID() {
@@ -42,11 +55,40 @@ async function getPortalID() {
 
 
 async function joinPortal(portalId: any) {
-	let textEditor = vscode.window.activeTextEditor;
-	let client, portal_binding;
+	let client = await getAuthenticatedClient();
+	if(client) {
+		try {
+			let portal = await client.joinPortal(portalId);
+			vscode.window.showInformationMessage('Joined Portal with ID' + ' ' + portalId + ' ');
+			await createBindingForPortal(client, portal, false);
+		} catch (error) {
+			vscode.window.showErrorMessage('Unable to join the Portal with ID' + ' ' + portalId + ' error='+error);
+		}
+	}	
+}
+
+async function createPortal() {
+	let client = await getAuthenticatedClient();
+	if(client) {
+		try {
+			let portal : any = await client.createPortal();
+			vscode.window.showInputBox({ prompt: 'Created portal with ID', value: portal.id});
+			await createBindingForPortal(client, portal, true);
+		} catch (error) {
+			vscode.window.showErrorMessage('Unable to create a Portal with ID error='+error);
+		}
+	}
+}
+
+async function createBindingForPortal(client: TeletypeClient, portal: Portal, isHost : boolean) {
+	let portal_binding = new PortalBinding({ client: client, portal: portal, isHost: isHost });
+	await portal_binding.initialize();
+}
+
+async function getAuthenticatedClient() {
 	if (constants.AUTH_TOKEN !== '') {
 		try {
-			client = new TeletypeClient({
+			let client = new TeletypeClient({
 				pusherKey: constants.PUSHER_KEY,
 				pusherOptions: {
 					cluster: constants.PUSHER_CLUSTER
@@ -57,19 +99,15 @@ async function joinPortal(portalId: any) {
 
 			await client.initialize();
 			await client.signIn(constants.AUTH_TOKEN);
-
-			
-
+			return client;
 		} catch (e) {
 			console.log("Exception Error Message " + e);
 		}
-
-		portal_binding = new PortalBinding({ client: client, portalId: portalId, editor: textEditor });
-		await portal_binding.initialize();
 	}
 	else {
 		vscode.window.showErrorMessage("GitHub Auth Token. Please provide it in the constants.ts file");
 	}
+	return null;
 }
 
 export function deactivate() { }
