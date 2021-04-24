@@ -183,13 +183,7 @@ export default class EditorBinding {
 
 		const curosrDecorationRenderOption: vscode.DecorationRenderOptions = {
 			border: 'solid rgba(0,0,255,0.6)',
-			borderWidth: '5px 5px 5px 5px',
-			after: {
-				contentText: siteLogin,
-				backgroundColor: 'rgba(0,0,255,0.6)',
-				color: 'rgba(192,192,192,30)',
-				textDecoration: `none; ${this.stringifyCssProperties(nameTagStyleRules)}`
-			}
+			borderWidth: '5px 1px 5px 1px'
 		};
 
 		const create = vscode.window.createTextEditorDecorationType;
