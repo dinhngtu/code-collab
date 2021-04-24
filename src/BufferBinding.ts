@@ -16,6 +16,7 @@ export default class BufferBinding {
 	private onUpdateText: any;
 	private onInsert: any;
 	private onDelete: any;
+	private remoteChanges = new Set<string>();
 
 
 	constructor({ buffer, isHost, didDispose }: { buffer: any; isHost: any; didDispose: any; }) {
@@ -54,7 +55,10 @@ export default class BufferBinding {
 		return this.editor.edit(builder => {
 			for (let i = textUpdates.length - 1; i >= 0; i--) {
 				const textUpdate = textUpdates[i];
-				builder.replace(this.createRange(textUpdate.oldStart, textUpdate.oldEnd), textUpdate.newText);
+				let range = this.createRange(textUpdate.oldStart, textUpdate.oldEnd);
+				let changeHash = this.hashChange(range, textUpdate.newText);
+				this.remoteChanges.add(changeHash);
+				builder.replace(range, textUpdate.newText);
 			}
 		}, { undoStopBefore: false, undoStopAfter: true });
 	}
@@ -93,15 +97,17 @@ export default class BufferBinding {
 	}
 
 	onDidChangeBuffer(changes: vscode.TextDocumentContentChangeEvent[]) {
-		this.bufferProxy.onDidChangeBuffer(changes.map(change => {
-			const { start, end } = change.range;
-
-			return {
-				oldStart: { row: start.line, column: start.character },
-				oldEnd: { row: end.line, column: end.character },
-				newText: change.text
-			};
-		}));
+		for(let change of changes) {
+			let changeHash = this.hashChange(change.range, change.text);
+			if(this.remoteChanges.has(changeHash)){
+				this.remoteChanges.delete(changeHash)
+			} else {
+				const { start, end } = change.range;
+				let oldStart = { row: start.line, column: start.character };
+				let oldEnd = { row: end.line, column: end.character };
+				this.bufferProxy.setTextInRange(oldStart, oldEnd, change.text);
+			}
+		}
 	}
 
 	requestSavePromise() {
@@ -112,5 +118,9 @@ export default class BufferBinding {
 
 	save() {
 		this.buffer.save();
+	}
+
+	private hashChange(range : vscode.Range, text : string) : string {
+		return range.start.line+":"+range.start.character+">"+range.end.line+":"+range.end.character+"="+text;
 	}
 }
