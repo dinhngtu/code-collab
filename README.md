@@ -1,3 +1,13 @@
+This repository is a fork of the original repository aimed at providing collaborative editing for code-server. 
+
+The following changes will have to be done: 
+- [ ] Fixes (the original code still has a few problems, like it not working on windows, text updates only working from Atom not from VSCode and so on)
+- [ ] Porting to code-server if necessary
+- [ ] Hosting the teletype server inside code-server
+- [ ] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
+
+The original readme follows:
+
 # VS Code Extension with Teletype Libraries (Development in Progress)
 This repository is for the VS Code extension with Teletype libraries. This extension can be executed in Eclipse Che sidecar as a remote plugin. The aim of this extension is to implement the CoEditing skeleton for Eclipse Che and Theia so that contributors can have the experience similar to Google Docs. This skeleton can be further used for mentoring sessions, code reviews, and co-editing.
 
