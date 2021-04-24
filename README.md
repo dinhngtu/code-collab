@@ -1,10 +1,10 @@
 This repository is a fork of the original repository aimed at providing collaborative editing for code-server. 
 
 The following changes will have to be done: 
-[] Fixes (the original code still has a few problems, like it not working on windows, text updates only working from Atom not from VSCode and so on)
-[] Porting to code-server if necessary
-[] Hosting the teletype server inside code-server
-[] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
+- [ ] Fixes (the original code still has a few problems, like it not working on windows, text updates only working from Atom not from VSCode and so on)
+- [ ] Porting to code-server if necessary
+- [ ] Hosting the teletype server inside code-server
+- [ ] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
 
 The original readme follows:
 
