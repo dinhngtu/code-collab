@@ -3,6 +3,7 @@
 import * as vscode from 'vscode';
 import { Portal, TeletypeClient } from '@atom/teletype-client';
 import PortalBinding from './PortalBinding';
+import { TeletypeSyncPortal } from './sync/teletype/teletypeSyncPortal';
 
 
 const fetch = require('node-fetch');
@@ -81,7 +82,7 @@ async function createPortal() {
 }
 
 async function createBindingForPortal(client: TeletypeClient, portal: Portal, isHost : boolean) {
-	let portal_binding = new PortalBinding({ client: client, portal: portal, isHost: isHost });
+	let portal_binding = new PortalBinding(new TeletypeSyncPortal(portal), isHost);
 	await portal_binding.initialize();
 }
 

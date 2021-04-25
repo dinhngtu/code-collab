@@ -1,92 +1,50 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
+import { IBufferListener } from './sync/iBufferListener';
+import { TextChange } from './sync/data/textChange';
+import { IBufferSync } from './sync/iBufferSync';
+import { Position } from './sync/data/position';
 
-import { BufferProxy } from '@atom/teletype-client';
-
-import { Position, TextUdpate } from './teletype_types';
-
-export default class BufferBinding {
-	public readonly buffer: vscode.TextDocument;
-	private editor!: vscode.TextEditor;
-	private readonly isHost: boolean;
-	private bufferProxy!: BufferProxy;
-	private onGetText: any;
-	public didDispose: Function;
+export default class BufferBinding implements IBufferListener {
 	private disposed!: boolean;
-	private onUpdateText: any;
-	private onInsert: any;
-	private onDelete: any;
 	private remoteChanges = new Set<string>();
+	public editor : vscode.TextEditor | null = null;
 
-
-	constructor({ buffer, isHost, didDispose }: { buffer: any; isHost: any; didDispose: any; }) {
-
-		this.buffer = buffer;
-		this.isHost = isHost;
-		this.didDispose = didDispose;
+	constructor(public buffer : vscode.TextDocument, public bufferSync : IBufferSync) {
+		bufferSync.setListener(this);
+	}
+	
+	async onSetText(text: string): Promise<void> {
+		fs.writeFileSync(this.buffer.uri.fsPath, text);
+	}
+	
+	onTextChanges(changes: TextChange[]): Promise<void> {
+		return new Promise((resolve, reject) => {
+			this.editor?.edit(builder => {
+				for (let i = changes.length - 1; i >= 0; i--) {
+					const textUpdate = changes[i];
+					let range = this.createRange(textUpdate.start, textUpdate.end);
+					let changeHash = this.hashChange(range, textUpdate.text);
+					this.remoteChanges.add(changeHash);
+					builder.replace(range, textUpdate.text);
+				}
+			}, { undoStopBefore: false, undoStopAfter: true }).then(() => {
+				resolve();
+			});
+		});
+		
+	}
+	
+	async onSave(): Promise<void> {
+		this.buffer.save();
 	}
 
 	dispose() {
 		this.disposed = true;
 	}
+
 	isDisposed() {
 		return this.disposed;
-	}
-	getText() {
-		if (typeof this.onGetText === "function") {
-			return this.onGetText();
-		}
-		return null;
-	}
-
-	setBufferProxy(bufferProxy: BufferProxy) {
-		this.bufferProxy = bufferProxy;
-	}
-
-	setText(text: string) {
-		fs.writeFileSync(this.buffer.uri.fsPath, text);
-	}
-
-	setEditor(editor: vscode.TextEditor) {
-		this.editor = editor;
-	}
-
-	updateText(textUpdates: any) {
-		return this.editor.edit(builder => {
-			for (let i = textUpdates.length - 1; i >= 0; i--) {
-				const textUpdate = textUpdates[i];
-				let range = this.createRange(textUpdate.oldStart, textUpdate.oldEnd);
-				let changeHash = this.hashChange(range, textUpdate.newText);
-				this.remoteChanges.add(changeHash);
-				builder.replace(range, textUpdate.newText);
-			}
-		}, { undoStopBefore: false, undoStopAfter: true });
-	}
-
-	traverse(start: any, distance: any) {
-		if (distance.row === 0) {
-			return { row: start.row, column: start.column + distance.column };
-		}
-
-		else {
-			return { row: start.row + distance.row, column: distance.column };
-		}
-	}
-
-	insert(position: any, text: any) {
-		console.log("buffer insert pos:" + position + " text: " + text);
-		if (typeof this.onInsert === "function") {
-			this.onInsert(position, text);
-		}
-		return [position, position, text];
-	}
-	delete(startPosition: any, extent: any) {
-		console.log("buffer delete start pos:" + startPosition + " extent: " + extent);
-		if (typeof this.onDelete === "function") {
-			this.onDelete(startPosition, extent);
-		}
-		const endPosition = this.traverse(startPosition, extent);
-		return [startPosition, endPosition, ''];
 	}
 
 	createRange(start: Position, end: Position): vscode.Range {
@@ -105,19 +63,13 @@ export default class BufferBinding {
 				const { start, end } = change.range;
 				let oldStart = { row: start.line, column: start.character };
 				let oldEnd = { row: end.line, column: end.character };
-				this.bufferProxy.setTextInRange(oldStart, oldEnd, change.text);
+				this.bufferSync.sendChangeToRemote(new TextChange(oldStart, oldEnd, change.text));
 			}
 		}
 	}
 
 	requestSavePromise() {
-		return new Promise(() => {
-			this.bufferProxy.requestSave();
-		});
-	}
-
-	save() {
-		this.buffer.save();
+		return this.bufferSync.saveToRemote();
 	}
 
 	private hashChange(range : vscode.Range, text : string) : string {
