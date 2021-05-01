@@ -46,8 +46,10 @@ export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener
             listener.onTextChanges(textChanges);
         });
 	}
+
     getChangeType(textUpdate: any): TextChangeType {
-        if(textUpdate.oldStart ==  textUpdate.oldEnd) {
+        if(textUpdate.oldStart.row ==  textUpdate.oldEnd.row &&
+            textUpdate.oldStart.column == textUpdate.oldEnd.column) {
             return TextChangeType.INSERT;
         } else {
             if(textUpdate.newText == "") {
