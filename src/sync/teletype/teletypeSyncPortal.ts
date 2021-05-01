@@ -2,15 +2,22 @@ import { BufferProxy, EditorProxy, Portal } from "@atom/teletype-client";
 import { IEditorSync } from "../iEditorSync";
 import { IPortalListener } from "../iPortalListener";
 import { ISyncPortal } from "../iSyncPortal";
+import { DelayedListenerExecution } from "./delayedListenerExecution";
 import { TeletypeEditorSync } from "./teletypeEditorSync";
 
-export class TeletypeSyncPortal implements ISyncPortal {
+export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener> implements ISyncPortal {
 
-    private listener : IPortalListener | null = null;
     private syncsByProxy = new  Map<EditorProxy, IEditorSync>();
 
     constructor(public portal : Portal) {
+        super();
         this.portal.setDelegate(this);
+    }
+    close(): void {
+        this.portal.dispose();
+        for(let editorSync of this.syncsByProxy.values()) {
+            editorSync.close();
+        }
     }
 
     syncLocalFileToRemote(fileid: string): Promise<IEditorSync> {
@@ -27,23 +34,25 @@ export class TeletypeSyncPortal implements ISyncPortal {
         return Promise.resolve();
     }
 
-    setListener(listener: IPortalListener): void {
-        this.listener = listener;
-    }
-
     dispose() {
-        this.listener?.dispose();
+        this.executeOnListener((listener) => {
+            listener.dispose();
+        });
     }
 
     async updateTether(state: any, editorProxy: any, position: any) {
 		if (editorProxy) {
             let uniquePath = "/"+(this.portal as any).id+"/"+(editorProxy as any).bufferProxy.uri;
             if(this.syncsByProxy.has(editorProxy)) {
-                await this.listener?.onOpenRemoteFile(uniquePath, this.syncsByProxy.get(editorProxy)!);
+                this.executeOnListener((listener) => {
+                    listener.onOpenRemoteFile(uniquePath, this.syncsByProxy.get(editorProxy)!);
+                });
             } else {
                 let editorSync = new TeletypeEditorSync(editorProxy);
                 this.syncsByProxy.set(editorProxy, editorSync);
-                await this.listener?.onOpenRemoteFile(uniquePath,editorSync);
+                this.executeOnListener((listener) => {
+                    listener.onOpenRemoteFile(uniquePath,editorSync);
+                });
             }
 		}
 	}

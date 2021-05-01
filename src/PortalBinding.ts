@@ -42,6 +42,17 @@ export default class PortalBinding implements IPortalListener{
 		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this));
 		vscode.workspace.onWillSaveTextDocument(this.saveDocument.bind(this));
 		vscode.window.onDidChangeTextEditorSelection(this.triggerSelectionChanges.bind(this));
+		vscode.window.onDidChangeVisibleTextEditors(this.onDidChangeVisibleTextEditors.bind(this));
+	}
+
+	private onDidChangeVisibleTextEditors(editors : vscode.TextEditor[]) {
+		for(let editor of this.editorBindingsByEditor.keys()) {
+			if(!editors.includes(editor)) {
+				this.editorBindingsByEditor.delete(editor);
+				this.editorSyncsByEditor.get(editor)!.close();
+				this.editorSyncsByEditor.delete(editor);
+			}
+		}
 	}
 
 	private onDidChangeTextDocument (event : vscode.TextDocumentChangeEvent) {
@@ -106,7 +117,7 @@ export default class PortalBinding implements IPortalListener{
 	private async findOrCreateEditorByEditorSync (uniqueUrl : string, editorSync : IEditorSync) : Promise<vscode.TextEditor> {
 		let editor : vscode.TextEditor;
 		let editorBinding = this.editorBindingsByEditorSync.get(editorSync);
-		if (editorBinding) {
+		if (editorBinding && vscode.window.visibleTextEditors.includes(editorBinding.editor)) {
 			editor = editorBinding.editor;
 		} else {
 			editor = await this.createAndRegisterNewEditor(editorSync, uniqueUrl);

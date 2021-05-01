@@ -1,48 +1,67 @@
 import { BufferProxy } from "@atom/teletype-client";
-import { TextChange } from "../data/textChange";
+import { TextChange, TextChangeType } from "../data/textChange";
 import { IBufferListener } from "../iBufferListener";
 import { IBufferSync } from "../iBufferSync";
+import { DelayedListenerExecution } from "./delayedListenerExecution";
 
-export class TeletypeBufferSync implements IBufferSync {
-
-    private listener : IBufferListener | null = null;
+export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener> implements IBufferSync {
 
     constructor(public bufferProxy : BufferProxy) {
+        super();
         this.bufferProxy.setDelegate(this);
     }
 
-    setListener(listener: IBufferListener): void {
-        this.listener = listener;
+    close(): void {
+        this.bufferProxy.dispose();
     }
-    
+
     async saveToRemote(): Promise<void> {
 		this.bufferProxy.requestSave();
     }
     
     sendChangeToRemote(change: TextChange): Promise<void> {
-        this.bufferProxy.setTextInRange(change.start, change.start, change.text);
+        this.bufferProxy.setTextInRange(change.start, change.end, change.text);
         return Promise.resolve();
     }
 
     
 	dispose() {
-		this.listener?.dispose();
+        this.executeOnListener((listener) => {
+            listener.dispose();
+        });
 	}
 
     setText(text: string) {
-		this.listener?.onSetText(text);
+        this.executeOnListener((listener) => {
+            listener.onSetText(text);
+        });
 	}
 
     updateText(textUpdates: any) {
         let textChanges : TextChange[] = [];
         for(let textUpdate of textUpdates) {
-            textChanges.push(new TextChange(textUpdate.oldStart, textUpdate.oldEnd, textUpdate.newText));
+            textChanges.push(new TextChange(this.getChangeType(textUpdate), textUpdate.oldStart, textUpdate.oldEnd, textUpdate.newText));
         }
-        this.listener?.onTextChanges(textChanges);
+        this.executeOnListener((listener) => {
+            listener.onTextChanges(textChanges);
+        });
 	}
+    getChangeType(textUpdate: any): TextChangeType {
+        if(textUpdate.oldStart ==  textUpdate.oldEnd) {
+            return TextChangeType.INSERT;
+        } else {
+            if(textUpdate.newText == "") {
+                return TextChangeType.DELETE;
+            } else {
+                return TextChangeType.UPDATE;
+            }
+        }
+    }
 
     save() {
-		this.listener?.onSave();
+        this.executeOnListener((listener) => {
+            listener.onSave();
+        });
 	}
     
 }

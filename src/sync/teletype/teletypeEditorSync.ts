@@ -6,15 +6,21 @@ import { SelectionMap, Selection as TeletypeSelection, Range } from '../../telet
 import { IBufferSync } from "../iBufferSync";
 import { IBufferListener } from "../iBufferListener";
 import { TeletypeBufferSync } from "./teletypeBufferSync";
+import { DelayedListenerExecution } from "./delayedListenerExecution";
 
-export class TeletypeEditorSync implements IEditorSync{
+export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener> implements IEditorSync{
 
-    private listener : IEditorListener | null = null;
     private bufferSync : IBufferSync;
 
     constructor(public editorProxy : EditorProxy) {
+        super();
         this.editorProxy.setDelegate(this);
         this.bufferSync = new TeletypeBufferSync((this.editorProxy as any).bufferProxy);
+    }
+
+    close(): void {
+        this.editorProxy.dispose();
+        this.bufferSync.close();
     }
 
     getBufferSync(): IBufferSync {
@@ -38,16 +44,15 @@ export class TeletypeEditorSync implements IEditorSync{
         return Promise.resolve();
     }
 
-    setListener(listener: IEditorListener): void {
-        this.listener = listener;
-    }
 
     isScrollNeededToViewPosition(position: any) {
         //TODO: implement
 	}
 
     dispose() {
-		this.listener?.dispose();
+        this.executeOnListener((listener) => {
+            listener.dispose();
+        });
 	}
 
     updateSelectionsForSiteId(siteId: number, selectionUpdates: SelectionMap) {
@@ -62,11 +67,15 @@ export class TeletypeEditorSync implements IEditorSync{
                 selections.push(new Selection(selectionId, selectionUpdate.range.start, selectionUpdate.range.end, selectionUpdate.reversed, this.isCursor(selectionUpdate)))
             }
         }
-        this.listener?.onSelectionsChangedForPeer(""+siteId, selections);
+        this.executeOnListener((listener) => {
+            listener.onSelectionsChangedForPeer(""+siteId, selections);
+        });
 	}
 
     clearSelectionsForSiteId(siteId: number) {
-        this.listener?.onSelectionsChangedForPeer(""+siteId, []);
+        this.executeOnListener((listener) => {
+            listener.onSelectionsChangedForPeer(""+siteId, []);
+        });
     }
     
     private isCursor(selectionUpdate: TeletypeSelection): boolean {

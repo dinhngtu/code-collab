@@ -1,7 +1,12 @@
 import { Position } from "./position";
 
+export enum TextChangeType {
+    INSERT, UPDATE, DELETE
+}
+
 export class TextChange {
-    constructor(public start : Position, public end : Position, public text : string) {
+
+    constructor(public type : TextChangeType, public start : Position, public end : Position, public text : string) {
 
     }
 }

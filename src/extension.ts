@@ -16,6 +16,8 @@ globalAny.window = global;
 globalAny.window.fetch = fetch;
 globalAny.RTCPeerConnection = wrtc.RTCPeerConnection;
 
+var activePortal : Portal | null = null;
+
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -54,12 +56,22 @@ async function getPortalID() {
 	return portalID;
 }
 
+function closeActivePortal() {
+	if(activePortal != null) {
+		vscode.window.showInformationMessage('Closing Portal with ID' + ' ' + (activePortal as any).id);
+		activePortal.dispose();
+		activePortal = null;
+	}
+}
+
 
 async function joinPortal(portalId: any) {
 	let client = await getAuthenticatedClient();
 	if(client) {
 		try {
+			closeActivePortal();
 			let portal = await client.joinPortal(portalId);
+			activePortal = portal;
 			vscode.window.showInformationMessage('Joined Portal with ID' + ' ' + portalId + ' ');
 			await createBindingForPortal(client, portal, false);
 		} catch (error) {
@@ -72,7 +84,9 @@ async function createPortal() {
 	let client = await getAuthenticatedClient();
 	if(client) {
 		try {
+			closeActivePortal();
 			let portal : any = await client.createPortal();
+			activePortal = portal;
 			vscode.window.showInputBox({ prompt: 'Created portal with ID', value: portal.id});
 			await createBindingForPortal(client, portal, true);
 		} catch (error) {
