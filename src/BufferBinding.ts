@@ -1,10 +1,10 @@
-import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { IBufferListener } from './sync/iBufferListener';
 import { TextChange, TextChangeType } from './sync/data/textChange';
 import { IBufferSync } from './sync/iBufferSync';
 import { Position } from './sync/data/position';
 import { Queue } from 'queue-typescript';
+import { MockableApis } from './base/mockableApis';
 
 export default class BufferBinding implements IBufferListener {
 	private disposed!: boolean;
@@ -15,7 +15,7 @@ export default class BufferBinding implements IBufferListener {
 
 	constructor(public buffer : vscode.TextDocument, public bufferSync : IBufferSync) {
 		bufferSync.setListener(this);
-		setInterval(this.editPoller.bind(this), 100);
+		MockableApis.executor.executeCyclic(this.editPoller.bind(this), 100);
 	}
 
 	async editPoller() {
@@ -45,12 +45,12 @@ export default class BufferBinding implements IBufferListener {
 	async onSetText(text: string): Promise<void> {
 		let initPos =new vscode.Position(0,0);
 		this.remoteChanges.add(this.hashChange(new vscode.Range(initPos,initPos), text));
-		fs.writeFileSync(this.buffer.uri.fsPath, text);
+		MockableApis.fs.writeFileSync(this.buffer.uri.fsPath, text);
 	}
 	
 	async onTextChanges(changes: TextChange[]): Promise<void> {
 		
-		if(vscode.window.visibleTextEditors.includes(this.editor!)) {
+		if(MockableApis.window.visibleTextEditors.includes(this.editor!)) {
 			for (let i = changes.length - 1; i >= 0; i--) {
 				const textUpdate = changes[i];
 				this.edits.enqueue(textUpdate);
@@ -86,7 +86,7 @@ export default class BufferBinding implements IBufferListener {
 		return this.disposed;
 	}
 
-	createRange(start: Position, end: Position): vscode.Range {
+	private createRange(start: Position, end: Position): vscode.Range {
 		return new vscode.Range(
 			new vscode.Position(start.row, start.column),
 			new vscode.Position(end.row, end.column)
@@ -100,8 +100,8 @@ export default class BufferBinding implements IBufferListener {
 				this.remoteChanges.delete(changeHash)
 			} else {
 				const { start, end } = change.range;
-				let oldStart = { row: start.line, column: start.character };
-				let oldEnd = { row: end.line, column: end.character };
+				let oldStart = new Position(start.line, start.character);
+				let oldEnd = new Position(end.line,end.character);
 				this.bufferSync.sendChangeToRemote(new TextChange(TextChangeType.UPDATE, oldStart, oldEnd, change.text));
 			}
 		}
