@@ -271,9 +271,9 @@ declare module '@atom/teletype-client' {
 
         broadcastEditorProxySwitch(...args: any[]): void;
 
-        createBufferProxy(...args: any[]): void;
+        createBufferProxy(...args: any[]): BufferProxy;
 
-        createEditorProxy(...args: any[]): void;
+        createEditorProxy(...args: any[]): EditorProxy;
 
         deserializeBufferProxy(...args: any[]): void;
 

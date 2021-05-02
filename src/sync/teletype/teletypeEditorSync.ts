@@ -29,16 +29,14 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
     
     sendSelectionsToRemote(selections: Selection[]): Promise<void> {
         let selectionMap : SelectionMap =  {};
-        var index = 0;
         for(let selection of selections) {
-            selectionMap[index] = {
+            selectionMap[parseInt(selection.id)] = {
                 range: {
                     start: selection.start,
                     end: selection.end
                 },
                 reversed: selection.reversed
             };
-            index++;
         }
         this.editorProxy.updateSelections(selectionMap);
         return Promise.resolve();

@@ -13,6 +13,7 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
         super();
         this.portal.setDelegate(this);
     }
+    
     close(): void {
         this.portal.dispose();
         for(let editorSync of this.syncsByProxy.values()) {
@@ -21,8 +22,8 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     }
 
     syncLocalFileToRemote(fileid: string): Promise<IEditorSync> {
-        let bufferProxy = this.portal.createBufferProxy() as unknown as BufferProxy;
-		let editorProxy = this.portal.createEditorProxy({bufferProxy}) as unknown as EditorProxy;
+        let bufferProxy = this.portal.createBufferProxy();
+		let editorProxy = this.portal.createEditorProxy({bufferProxy});
         let editorSync = new TeletypeEditorSync(editorProxy);
         this.syncsByProxy.set(editorProxy, editorSync);
         return Promise.resolve(editorSync);
