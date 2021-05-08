@@ -10,6 +10,8 @@ import { ISyncPortal } from './sync/iSyncPortal';
 import { IPortalListener } from './sync/iPortalListener';
 import { IEditorSync } from './sync/iEditorSync';
 import { IBufferSync } from './sync/iBufferSync';
+import { MockableApis } from './base/mockableApis';
+import { fileUrl } from './base/functions';
 let fsPromises = fs.promises;
 
 export default class PortalBinding implements IPortalListener{
@@ -33,16 +35,16 @@ export default class PortalBinding implements IPortalListener{
 		this.syncPortal.setListener(this);
 		this.registerWorkspaceEvents();
 		if(this.isHost) {
-			this.onDidChangeActiveTextEditor(vscode.window.activeTextEditor);
+			this.onDidChangeActiveTextEditor(MockableApis.window.activeTextEditor);
 		}
 	}
 
 	private registerWorkspaceEvents () {
-		vscode.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this));
-		vscode.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this));
-		vscode.workspace.onWillSaveTextDocument(this.saveDocument.bind(this));
-		vscode.window.onDidChangeTextEditorSelection(this.triggerSelectionChanges.bind(this));
-		vscode.window.onDidChangeVisibleTextEditors(this.onDidChangeVisibleTextEditors.bind(this));
+		MockableApis.workspace.onDidChangeTextDocument(this.onDidChangeTextDocument.bind(this));
+		MockableApis.window.onDidChangeActiveTextEditor(this.onDidChangeActiveTextEditor.bind(this));
+		MockableApis.workspace.onWillSaveTextDocument(this.saveDocument.bind(this));
+		MockableApis.window.onDidChangeTextEditorSelection(this.triggerSelectionChanges.bind(this));
+		MockableApis.window.onDidChangeVisibleTextEditors(this.onDidChangeVisibleTextEditors.bind(this));
 	}
 
 	private onDidChangeVisibleTextEditors(editors : vscode.TextEditor[]) {
@@ -117,7 +119,7 @@ export default class PortalBinding implements IPortalListener{
 	private async findOrCreateEditorByEditorSync (uniqueUrl : string, editorSync : IEditorSync) : Promise<vscode.TextEditor> {
 		let editor : vscode.TextEditor;
 		let editorBinding = this.editorBindingsByEditorSync.get(editorSync);
-		if (editorBinding && vscode.window.visibleTextEditors.includes(editorBinding.editor)) {
+		if (editorBinding && MockableApis.window.visibleTextEditors.includes(editorBinding.editor)) {
 			editor = editorBinding.editor;
 		} else {
 			editor = await this.createAndRegisterNewEditor(editorSync, uniqueUrl);
@@ -130,8 +132,8 @@ export default class PortalBinding implements IPortalListener{
 		const buffer = await this.findOrCreateBufferForBufferSync(bufferSync, uniqueUrl);
 		const bufferBinding = this.bufferBindingsByBufferSync.get(bufferSync);
 
-		let editor = await vscode.window.showTextDocument(buffer);
-		await vscode.commands.executeCommand('workbench.action.keepEditor');
+		let editor = await MockableApis.window.showTextDocument(buffer);
+		await MockableApis.commands.executeCommand('workbench.action.keepEditor');
 		if (bufferBinding) {
 			bufferBinding.editor = editor;
 		}
@@ -161,8 +163,7 @@ export default class PortalBinding implements IPortalListener{
 
 	private async createAndRegisterNewBuffer(uniqueUrl: string, bufferSync: IBufferSync) : Promise<vscode.TextDocument> {
 		const bufferURI = await this.createTemporaryFileForBufferUrl(uniqueUrl);
-		let buffer = await vscode.workspace.openTextDocument(bufferURI);
-
+		let buffer = await MockableApis.workspace.openTextDocument(bufferURI);
 		this.registerNewBindingForBufferAndSync(buffer, bufferSync);
 		return buffer;
 	}
@@ -175,20 +176,10 @@ export default class PortalBinding implements IPortalListener{
 
 	private async createTemporaryFileForBufferUrl(uniqueUrl: string) {
 		const bufferPath = path.join(os.tmpdir(), uniqueUrl);
-		const bufferURI = vscode.Uri.parse(this.fileUrl(bufferPath));
-		await fsPromises.mkdir(path.dirname(bufferURI.fsPath), { recursive: true });
-		fs.writeFileSync(bufferURI.fsPath, '');
+		const bufferURI = vscode.Uri.parse(fileUrl(bufferPath));
+		await MockableApis.fsPromises.mkdir(path.dirname(bufferPath), { recursive: true });
+		MockableApis.fs.writeFileSync(bufferURI.fsPath, '');
 		return bufferURI;
 	}
 
-	fileUrl(str : string) {	
-		var pathName = path.resolve(str).replace(/\\/g, '/');
-	
-		// Windows drive letter must be prefixed with a slash
-		if (pathName[0] !== '/') {
-			pathName = '/' + pathName;
-		}
-	
-		return encodeURI('file://' + pathName);
-	};
 }

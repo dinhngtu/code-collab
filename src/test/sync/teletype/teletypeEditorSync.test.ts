@@ -4,7 +4,7 @@ import { Position } from '../../../sync/data/position';
 import { Selection } from '../../../sync/data/selection';
 import { IEditorListener } from '../../../sync/iEditorListener';
 import { TeletypeEditorSync } from '../../../sync/teletype/teletypeEditorSync';
-import { SelectionMap } from '../../../teletype_types';
+import { SelectionMap } from '../../../sync/teletype/types/teletype_types';
 
 suite("TeletypeEditorSync", function () {
 

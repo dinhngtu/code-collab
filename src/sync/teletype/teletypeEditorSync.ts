@@ -2,7 +2,7 @@ import { Selection } from "../data/selection";
 import { IEditorListener } from "../iEditorListener";
 import { IEditorSync } from "../iEditorSync";
 import { EditorProxy, Portal } from '@atom/teletype-client';
-import { SelectionMap, Selection as TeletypeSelection, Range } from '../../teletype_types';
+import { SelectionMap, Selection as TeletypeSelection, Range } from './types/teletype_types';
 import { IBufferSync } from "../iBufferSync";
 import { IBufferListener } from "../iBufferListener";
 import { TeletypeBufferSync } from "./teletypeBufferSync";

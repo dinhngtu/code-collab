@@ -13,15 +13,11 @@ import { MemoryEditor } from './memoryEditor';
 
 suite("BufferBinding", function () {
 
+    
     let executor = new ManualCyclicExecutor();
-    MockableApis.executor = executor;
     let vol = Volume.fromJSON({
         "file.txt" : ""
     },"/tmp");
-    MockableApis.fs = vol;
-    MockableApis.window = {
-        visibleTextEditors : []
-    }
 
     let bufferSyncClass = mock<IBufferSync>();
     let bufferClass = mock<vscode.TextDocument>();
@@ -29,6 +25,13 @@ suite("BufferBinding", function () {
     let buffer = instance(bufferClass);
 
     var bufferBinding = new BufferBinding(buffer, bufferSync);
+    suiteSetup(() => {
+        MockableApis.executor = executor;
+        MockableApis.fs = vol;
+        MockableApis.window = {
+            visibleTextEditors : []
+        }
+    });
 
 
     test("test set text", async function() {

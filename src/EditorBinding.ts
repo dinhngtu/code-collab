@@ -51,6 +51,7 @@ export default class EditorBinding implements IEditorListener{
 		let remoteSelections : Selection[] = [];
 		for(let selection of selections) {
 			remoteSelections.push(new Selection(index+"",this.convertVSCodePosition(selection.start), this.convertVSCodePosition(selection.end), selection.isReversed, this.isCursor(selection)));
+			index++;
 		}
 		this.editorSync.sendSelectionsToRemote(remoteSelections);
 	}
@@ -72,10 +73,7 @@ export default class EditorBinding implements IEditorListener{
 	}
 
 	private convertVSCodePosition(position: vscode.Position): Position {
-		return {
-			column: position.character,
-			row: position.line
-		};
+		return new Position(position.line, position.character);
 	}
 
 	private convertSyncPosition(position: Position): vscode.Position {
