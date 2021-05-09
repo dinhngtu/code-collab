@@ -11,4 +11,13 @@ export class MockableApis {
     static workspace : any = vscode.workspace;
     static commands : any = vscode.commands;
     static fsPromises : any = fsPromises;
+
+    static restore() {
+        MockableApis.executor = new CyclicExecutor(); 
+        MockableApis.fs = fs;
+        MockableApis.window = vscode.window;
+        MockableApis.workspace = vscode.workspace;
+        MockableApis.commands = vscode.commands;
+        MockableApis.fsPromises = fsPromises;
+    }
 }

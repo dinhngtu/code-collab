@@ -1,10 +1,10 @@
 import { BufferProxy, EditorProxy } from '@atom/teletype-client';
 import {deepEqual, instance, mock, verify} from 'ts-mockito'
-import { Position } from '../../../sync/data/position';
-import { Selection } from '../../../sync/data/selection';
-import { IEditorListener } from '../../../sync/iEditorListener';
-import { TeletypeEditorSync } from '../../../sync/teletype/teletypeEditorSync';
-import { SelectionMap } from '../../../sync/teletype/types/teletype_types';
+import { Position } from '../../../../sync/data/position';
+import { Selection } from '../../../../sync/data/selection';
+import { IEditorListener } from '../../../../sync/iEditorListener';
+import { TeletypeEditorSync } from '../../../../sync/teletype/teletypeEditorSync';
+import { SelectionMap } from '../../../../sync/teletype/types/teletype_types';
 
 suite("TeletypeEditorSync", function () {
 

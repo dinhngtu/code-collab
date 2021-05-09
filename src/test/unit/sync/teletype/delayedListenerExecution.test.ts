@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { DelayedListenerExecution } from '../../../sync/teletype/delayedListenerExecution';
+import { DelayedListenerExecution } from '../../../../sync/teletype/delayedListenerExecution';
 
 class FakeDelayedListenerExecution extends DelayedListenerExecution<any> {
 

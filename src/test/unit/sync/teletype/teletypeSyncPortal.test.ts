@@ -1,9 +1,9 @@
 import { BufferProxy, EditorProxy, Portal } from '@atom/teletype-client';
 import {anyString, anything, deepEqual, instance, mock, strictEqual, verify, when} from 'ts-mockito'
-import { IEditorSync } from '../../../sync/iEditorSync';
-import { IPortalListener } from '../../../sync/iPortalListener';
-import { TeletypeEditorSync } from '../../../sync/teletype/teletypeEditorSync';
-import { TeletypeSyncPortal } from '../../../sync/teletype/teletypeSyncPortal';
+import { IEditorSync } from '../../../../sync/iEditorSync';
+import { IPortalListener } from '../../../../sync/iPortalListener';
+import { TeletypeEditorSync } from '../../../../sync/teletype/teletypeEditorSync';
+import { TeletypeSyncPortal } from '../../../../sync/teletype/teletypeSyncPortal';
 import * as assert from 'assert';
 
 suite("TeletypeSyncPortal", function () {

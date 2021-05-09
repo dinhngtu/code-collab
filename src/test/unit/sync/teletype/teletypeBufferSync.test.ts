@@ -1,10 +1,10 @@
 import { BufferProxy } from '@atom/teletype-client';
 import * as assert from 'assert';
 import {deepEqual, instance, mock, verify} from 'ts-mockito'
-import { Position } from '../../../sync/data/position';
-import { TextChange, TextChangeType } from '../../../sync/data/textChange';
-import {IBufferListener} from '../../../sync/iBufferListener'
-import { TeletypeBufferSync } from '../../../sync/teletype/teletypeBufferSync';
+import { Position } from '../../../../sync/data/position';
+import { TextChange, TextChangeType } from '../../../../sync/data/textChange';
+import {IBufferListener} from '../../../../sync/iBufferListener'
+import { TeletypeBufferSync } from '../../../../sync/teletype/teletypeBufferSync';
 
 suite("TeletypeBufferSync", function () {
 

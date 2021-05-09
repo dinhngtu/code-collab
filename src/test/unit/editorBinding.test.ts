@@ -1,17 +1,10 @@
-import * as assert from 'assert';
 import { anything, deepEqual, instance, mock, verify } from 'ts-mockito';
-import BufferBinding from '../BufferBinding';
-import { IBufferSync } from '../sync/iBufferSync';
 import * as vscode from 'vscode';
-import { MockableApis } from '../base/mockableApis';
-import { ManualCyclicExecutor } from './manualCyclicExecutor';
-import { Volume } from "memfs"
-import { Position } from '../sync/data/position';
-import { TextChange, TextChangeType } from '../sync/data/textChange';
-import { MemoryEditor } from './memoryEditor';
-import EditorBinding from '../EditorBinding';
-import { IEditorSync } from '../sync/iEditorSync';
-import { Selection } from '../sync/data/selection';
+import { MockableApis } from '../../base/mockableApis';
+import { Position } from '../../sync/data/position';
+import EditorBinding from '../../EditorBinding';
+import { IEditorSync } from '../../sync/iEditorSync';
+import { Selection } from '../../sync/data/selection';
 
 
 suite("EditorBinding", function () {

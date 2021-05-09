@@ -1,26 +1,18 @@
 import * as assert from 'assert';
-import { anyString, anything, deepEqual, instance, mock, verify, when } from 'ts-mockito';
-import BufferBinding from '../BufferBinding';
-import { IBufferSync } from '../sync/iBufferSync';
+import { deepEqual, instance, mock, verify, when } from 'ts-mockito';
+import { IBufferSync } from '../../sync/iBufferSync';
 import * as vscode from 'vscode';
-import { MockableApis } from '../base/mockableApis';
-import { ManualCyclicExecutor } from './manualCyclicExecutor';
+import { MockableApis } from '../../base/mockableApis';
 import { Volume } from "memfs"
-import { Position } from '../sync/data/position';
-import { TextChange, TextChangeType } from '../sync/data/textChange';
 import { MemoryEditor } from './memoryEditor';
-import EditorBinding from '../EditorBinding';
-import { IEditorSync } from '../sync/iEditorSync';
-import { Selection } from '../sync/data/selection';
+import { IEditorSync } from '../../sync/iEditorSync';
 import { MemoryWindow } from './memoryWindow';
 import { MemoryWorkspace } from './memoryWorkspace';
-import { ISyncPortal } from '../sync/iSyncPortal';
-import PortalBinding from '../PortalBinding';
+import PortalBinding from '../../PortalBinding';
 import * as os from 'os';
 import * as path from 'path';
-import { fileUrl } from '../base/functions';
-import { MemorySyncPortal } from '../sync/memory/memorySyncPortal';
-import { MemoryEditorSync } from '../sync/memory/memoryEditorSync';
+import { fileUrl } from '../../base/functions';
+import { MemorySyncPortal } from '../../sync/memory/memorySyncPortal';
 import { MockWrapper } from './mockWrapper';
 
 

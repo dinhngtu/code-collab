@@ -1,4 +1,4 @@
-import { ICyclicExecutor } from "../base/iCyclicExecutor";
+import { ICyclicExecutor } from "../../base/iCyclicExecutor";
 
 type ScheduledCall = {
     call: () => Promise<void>;
