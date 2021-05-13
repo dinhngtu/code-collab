@@ -10,7 +10,7 @@ export class MockTextDocument implements vscode.TextDocument {
     mockInstance = instance(this.mockClass);
 
 
-    uri: vscode.Uri = undefined as unknown as vscode.Uri;
+    uri: vscode.Uri = vscode.Uri.parse("file://path");
     fileName: string ="mock";
     isUntitled: boolean = false;
     languageId: string = "any";

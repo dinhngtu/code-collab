@@ -21,7 +21,10 @@ suite("PortalBinding", function () {
     let mockEditorClass = mock<vscode.TextEditor>();
     let mockEditor = instance(mockEditorClass);
     (mockEditor as any).document = {
-        fileName: "test.txt"
+        fileName: "test.txt",
+        uri: {
+            path: "test.txt"
+        }
     };
     
     var commandsClass = mock() as any;
@@ -62,7 +65,10 @@ suite("PortalBinding", function () {
         await createAndInitPortalBinding(syncPortal, true);     
         let editor = new MemoryEditor();
         (editor as any).document = {
-            fileName : "test.txt"
+            fileName : "test.txt",
+            uri: {
+                path: "test.txt"
+            }
         };
         await memoryWindow.activeTextEditorChangeListener!(editor);
         assert.strictEqual(syncPortal.localFiles.length, 2);

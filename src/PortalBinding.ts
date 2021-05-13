@@ -5,14 +5,12 @@ import EditorBinding from './EditorBinding';
 
 import * as os from 'os';
 import * as path from 'path';
-import * as fs from 'fs';
 import { ISyncPortal } from './sync/iSyncPortal';
 import { IPortalListener } from './sync/iPortalListener';
 import { IEditorSync } from './sync/iEditorSync';
 import { IBufferSync } from './sync/iBufferSync';
 import { MockableApis } from './base/mockableApis';
 import { fileUrl } from './base/functions';
-let fsPromises = fs.promises;
 
 export default class PortalBinding implements IPortalListener{
 	private disposed!: boolean;
@@ -21,6 +19,7 @@ export default class PortalBinding implements IPortalListener{
 	private bufferBindingsByBuffer = new Map<vscode.TextDocument, BufferBinding>();
 	private editorBindingsByEditor = new Map<vscode.TextEditor, EditorBinding>();
 	private editorSyncsByEditor = new WeakMap<vscode.TextEditor, IEditorSync>();
+	private remoteFiles = new Set<string>();
 
 
 	constructor(public syncPortal : ISyncPortal, public isHost : boolean) {
@@ -67,7 +66,7 @@ export default class PortalBinding implements IPortalListener{
 	}
 
 	private async onDidChangeActiveTextEditor (event : vscode.TextEditor | undefined) {
-		if(this.isHost && event) {
+		if(this.isHost && event && !this.remoteFiles.has(event.document.uri.path.toLocaleLowerCase())) {
 			let editorSync = this.editorSyncsByEditor.get(event);
 			if(!editorSync) {
 				try {
@@ -131,7 +130,6 @@ export default class PortalBinding implements IPortalListener{
 		let bufferSync = editorSync.getBufferSync();
 		const buffer = await this.findOrCreateBufferForBufferSync(bufferSync, uniqueUrl);
 		const bufferBinding = this.bufferBindingsByBufferSync.get(bufferSync);
-
 		let editor = await MockableApis.window.showTextDocument(buffer);
 		await MockableApis.commands.executeCommand('workbench.action.keepEditor');
 		if (bufferBinding) {
@@ -163,6 +161,7 @@ export default class PortalBinding implements IPortalListener{
 
 	private async createAndRegisterNewBuffer(uniqueUrl: string, bufferSync: IBufferSync) : Promise<vscode.TextDocument> {
 		const bufferURI = await this.createTemporaryFileForBufferUrl(uniqueUrl);
+		this.remoteFiles.add(bufferURI.path.toLocaleLowerCase());
 		let buffer = await MockableApis.workspace.openTextDocument(bufferURI);
 		this.registerNewBindingForBufferAndSync(buffer, bufferSync);
 		return buffer;
