@@ -1,4 +1,4 @@
-import { CyclicExecutor } from "./CyclicExecutor";
+import { CyclicExecutor } from "./cyclicExecutor";
 import { ICyclicExecutor } from "./iCyclicExecutor";
 import * as fs from 'fs';
 import * as vscode from 'vscode';
