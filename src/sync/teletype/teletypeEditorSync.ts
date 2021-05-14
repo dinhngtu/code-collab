@@ -1,10 +1,9 @@
 import { Selection } from "../data/selection";
 import { IEditorListener } from "../iEditorListener";
 import { IEditorSync } from "../iEditorSync";
-import { EditorProxy, Portal } from '@atom/teletype-client';
+import { EditorProxy } from '@atom/teletype-client';
 import { SelectionMap, Selection as TeletypeSelection, Range } from './types/teletype_types';
 import { IBufferSync } from "../iBufferSync";
-import { IBufferListener } from "../iBufferListener";
 import { TeletypeBufferSync } from "./teletypeBufferSync";
 import { DelayedListenerExecution } from "./delayedListenerExecution";
 
@@ -62,7 +61,7 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
                     let cursorRange = this.getCursorRangeFromSelection(selectionUpdate);
                     selections.push(new Selection(selectionId, cursorRange.start, cursorRange.end, false, true));
                 }
-                selections.push(new Selection(selectionId, selectionUpdate.range.start, selectionUpdate.range.end, selectionUpdate.reversed, this.isCursor(selectionUpdate)))
+                selections.push(new Selection(selectionId, selectionUpdate.range.start, selectionUpdate.range.end, selectionUpdate.reversed, this.isCursor(selectionUpdate)));
             }
         }
         this.executeOnListener((listener) => {
@@ -77,8 +76,8 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
     }
     
     private isCursor(selectionUpdate: TeletypeSelection): boolean {
-        return selectionUpdate.range.start.column == selectionUpdate.range.end.column && 
-            selectionUpdate.range.start.row == selectionUpdate.range.end.row;
+        return selectionUpdate.range.start.column === selectionUpdate.range.end.column && 
+            selectionUpdate.range.start.row === selectionUpdate.range.end.row;
     }
 
     private getCursorRangeFromSelection(selection: TeletypeSelection): Range {

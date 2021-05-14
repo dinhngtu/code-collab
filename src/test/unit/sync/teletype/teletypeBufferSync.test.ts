@@ -1,9 +1,8 @@
 import { BufferProxy } from '@atom/teletype-client';
-import * as assert from 'assert';
-import {deepEqual, instance, mock, verify} from 'ts-mockito'
+import {deepEqual, instance, mock, verify} from 'ts-mockito';
 import { Position } from '../../../../sync/data/position';
 import { TextChange, TextChangeType } from '../../../../sync/data/textChange';
-import {IBufferListener} from '../../../../sync/iBufferListener'
+import {IBufferListener} from '../../../../sync/iBufferListener';
 import { TeletypeBufferSync } from '../../../../sync/teletype/teletypeBufferSync';
 
 suite("TeletypeBufferSync", function () {
@@ -54,7 +53,7 @@ suite("TeletypeBufferSync", function () {
         let expectedInsert = new TextChange(TextChangeType.INSERT, insert.oldStart, insert.oldEnd, insert.newText);
         let expectedUpdate = new TextChange(TextChangeType.UPDATE, update.oldStart, update.oldEnd, update.newText);
         let expectedDelete = new TextChange(TextChangeType.DELETE, del.oldStart, del.oldEnd, del.newText);
-        verify(listenerClass.onTextChanges(deepEqual([expectedInsert,expectedUpdate,expectedDelete]))).once()
+        verify(listenerClass.onTextChanges(deepEqual([expectedInsert,expectedUpdate,expectedDelete]))).once();
     });
 
 });

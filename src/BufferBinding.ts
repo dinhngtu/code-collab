@@ -39,7 +39,7 @@ export default class BufferBinding implements IBufferListener {
 		let range = this.createRange(edit.start, edit.end);
 		let changeHash = this.hashChange(range, edit.text);
 		this.remoteChanges.add(changeHash);
-		while (!await this.tryPerformUpdate(edit, range));
+		while (!await this.tryPerformUpdate(edit, range)) { }
 	}
 
 	async onSetText(text: string): Promise<void> {
@@ -63,11 +63,11 @@ export default class BufferBinding implements IBufferListener {
 	private async tryPerformUpdate(textUpdate: TextChange, range: vscode.Range) {
 		return await new Promise<boolean>((resolve, reject) => {
 			this.editor?.edit(builder => {
-				if (textUpdate.type == TextChangeType.INSERT) {
+				if (textUpdate.type === TextChangeType.INSERT) {
 					builder.insert(range.start, textUpdate.text);
-				} else if (textUpdate.type == TextChangeType.UPDATE) {
+				} else if (textUpdate.type === TextChangeType.UPDATE) {
 					builder.replace(range, textUpdate.text);
-				} else if (textUpdate.type == TextChangeType.DELETE) {
+				} else if (textUpdate.type === TextChangeType.DELETE) {
 					builder.delete(range);
 				}
 			}, { undoStopBefore: false, undoStopAfter: true }).then(resolve);
@@ -97,7 +97,7 @@ export default class BufferBinding implements IBufferListener {
 		for(let change of changes) {
 			let changeHash = this.hashChange(change.range, change.text);
 			if(this.remoteChanges.has(changeHash)){
-				this.remoteChanges.delete(changeHash)
+				this.remoteChanges.delete(changeHash);
 			} else {
 				const { start, end } = change.range;
 				let oldStart = new Position(start.line, start.character);

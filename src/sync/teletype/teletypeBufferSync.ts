@@ -48,11 +48,11 @@ export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener
 	}
 
     getChangeType(textUpdate: any): TextChangeType {
-        if(textUpdate.oldStart.row ==  textUpdate.oldEnd.row &&
-            textUpdate.oldStart.column == textUpdate.oldEnd.column) {
+        if(textUpdate.oldStart.row ===  textUpdate.oldEnd.row &&
+            textUpdate.oldStart.column === textUpdate.oldEnd.column) {
             return TextChangeType.INSERT;
         } else {
-            if(textUpdate.newText == "") {
+            if(textUpdate.newText === "") {
                 return TextChangeType.DELETE;
             } else {
                 return TextChangeType.UPDATE;

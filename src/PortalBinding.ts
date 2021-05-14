@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import { TeletypeClient, Errors, Portal, FollowState, EditorProxy, BufferProxy } from '@atom/teletype-client';
 import BufferBinding from './BufferBinding';
 import EditorBinding from './EditorBinding';
 

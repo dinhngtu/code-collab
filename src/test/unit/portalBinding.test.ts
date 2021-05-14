@@ -3,7 +3,7 @@ import { deepEqual, instance, mock, verify, when } from 'ts-mockito';
 import { IBufferSync } from '../../sync/iBufferSync';
 import * as vscode from 'vscode';
 import { MockableApis } from '../../base/mockableApis';
-import { Volume } from "memfs"
+import { Volume } from "memfs";
 import { MemoryEditor } from './memoryEditor';
 import { IEditorSync } from '../../sync/iEditorSync';
 import { MemoryWindow } from './memoryWindow';
@@ -130,7 +130,7 @@ async function testOpenRemoteFile(portalBinding: PortalBinding, fsPromisesClass:
     assert.strictEqual(memoryWorkspace.openedTextDocuments.size, 1);
     let expectedUri = vscode.Uri.parse(fileUrl(path.join(os.tmpdir(), "test.txt")));
     //access fsPath, as otherwise it won't be filled in the object and the comparison will fail
-    expectedUri.fsPath;
+    let _ = expectedUri.fsPath;
     assert.deepStrictEqual(memoryWorkspace.openedTextDocuments.keys().next().value, expectedUri);
     assert.strictEqual(memoryWindow.createdTextEditors.size, 1);
     verify(commandsClass.executeCommand('workbench.action.keepEditor')).once();

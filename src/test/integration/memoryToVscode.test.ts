@@ -133,7 +133,7 @@ function sleep(ms : number) : Promise<void> {
 }
 
 async function pollEqual(timeoutInMs : number, expected : any, actual : () => any) {
-    await poll(timeoutInMs, "Expected: "+expected+" Actual: "+actual(), () => expected == actual());
+    await poll(timeoutInMs, "Expected: "+expected+" Actual: "+actual(), () => expected === actual());
 }
 
 async function poll(timeoutInMs : number, message : string, check : () => boolean) {

@@ -57,7 +57,7 @@ async function getPortalID() {
 }
 
 function closeActivePortal() {
-	if(activePortal != null) {
+	if(activePortal !== null) {
 		vscode.window.showInformationMessage('Closing Portal with ID' + ' ' + (activePortal as any).id);
 		activePortal.dispose();
 		activePortal = null;

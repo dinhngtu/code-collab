@@ -1,4 +1,4 @@
-import { BufferProxy, EditorProxy, Portal } from "@atom/teletype-client";
+import { EditorProxy, Portal } from "@atom/teletype-client";
 import { IEditorSync } from "../iEditorSync";
 import { IPortalListener } from "../iPortalListener";
 import { ISyncPortal } from "../iSyncPortal";

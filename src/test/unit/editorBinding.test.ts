@@ -11,7 +11,7 @@ suite("EditorBinding", function () {
 
     MockableApis.window = {
         visibleTextEditors : []
-    }
+    };
 
     let editorClass = mock<vscode.TextEditor>();
     let editorSyncClass = mock<IEditorSync>();
