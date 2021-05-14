@@ -4,7 +4,8 @@ The following changes will have to be done:
 - [x] Fixes (the original code still has a few problems, like it not working on windows, text updates only working from Atom not from VSCode and so on)
 - [x] Writing automated tests
 - [ ] Porting to code-server if necessary
-- [ ] Hosting the teletype server inside code-server
+- [ ] Switching to a different collab provider
+- [ ] Hosting the collab server inside code-server
 - [ ] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
 
 
