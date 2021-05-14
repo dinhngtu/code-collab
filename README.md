@@ -2,7 +2,7 @@ This repository is a fork of the original repository aimed at providing collabor
 
 The following changes will have to be done: 
 - [x] Fixes (the original code still has a few problems, like it not working on windows, text updates only working from Atom not from VSCode and so on)
-- [ ] Writing automated tests
+- [x] Writing automated tests
 - [ ] Porting to code-server if necessary
 - [ ] Hosting the teletype server inside code-server
 - [ ] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
