@@ -7,6 +7,8 @@ The following changes will have to be done:
 - [ ] Hosting the teletype server inside code-server
 - [ ] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
 
+[![Test](https://github.com/kainzpat14/vscode-teletype/actions/workflows/test.yml/badge.svg?branch=develop)](https://github.com/kainzpat14/vscode-teletype/actions/workflows/test.yml)
+
 The original readme follows:
 
 # VS Code Extension with Teletype Libraries (Development in Progress)
