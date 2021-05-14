@@ -35,10 +35,11 @@ suite("BufferBinding", function () {
 
 
     test("test set text", async function() {
-        (buffer as any).uri = vscode.Uri.file("/tmp/file.txt");
+        bufferBinding = new BufferBinding(buffer, bufferSync);
+        let memoryEditor = createEditor(bufferBinding, true);
         await bufferBinding.onSetText("abc");
-        let content = vol.readFileSync(buffer.uri.fsPath).toString();
-        assert.strictEqual(content,"abc");
+        await executor.cycle(100);
+        assert.deepStrictEqual(memoryEditor.lines,["abc"]);
     });
 
     test("test handle remote updates in inactive editor", async function() {
@@ -83,13 +84,18 @@ suite("BufferBinding", function () {
 });
 
 async function performChanges(bufferBinding: BufferBinding, changes: TextChange[], executor: ManualCyclicExecutor, activate : boolean = false) {
-    let memoryEditor = new MemoryEditor();
-    bufferBinding.editor = memoryEditor;
-    MockableApis.window.visibleTextEditors=[];
-    if(activate) {
-        MockableApis.window.visibleTextEditors.push(memoryEditor);
-    }
+    let memoryEditor = createEditor(bufferBinding, activate);
     await bufferBinding.onTextChanges(changes);
     await executor.cycle(100);
     return memoryEditor;
 }
+function createEditor(bufferBinding: BufferBinding, activate: boolean) {
+    let memoryEditor = new MemoryEditor();
+    bufferBinding.editor = memoryEditor;
+    MockableApis.window.visibleTextEditors = [];
+    if (activate) {
+        MockableApis.window.visibleTextEditors.push(memoryEditor);
+    }
+    return memoryEditor;
+}
+
