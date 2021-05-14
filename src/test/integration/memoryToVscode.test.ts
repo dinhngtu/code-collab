@@ -38,11 +38,10 @@ suite("MemoryToVscodeTest", function () {
         let bufferSync = (editorSync.getBufferSync() as MemoryBufferSync);
         let bufferListener =  bufferSync.listener!;
         await bufferListener.onSetText("Halo");
-        await sleep(250);
-        assert.strictEqual(activeEditor?.document.getText(), "Halo");
+        await pollEqual(1000, "Halo", () => activeEditor?.document.getText());
         await remoteEdit(activeEditor, bufferListener, bufferSync);
         await bufferListener.onSetText("Halo");
-        await sleep(250);
+        await pollEqual(1000, "Halo", () => activeEditor?.document.getText());
         await localEdit(activeEditor!, bufferSync);
     });
 
@@ -66,26 +65,23 @@ suite("MemoryToVscodeTest", function () {
         await localEdit(editor, bufferSync);
 
         await bufferSync.listener!.onSave();
-
-        await sleep(250);
-
-        let content = fs.readFileSync(tmpFile.path, {flag:'r'});
-        assert.strictEqual(content.toString(), "Hllo");
+        
+        await pollEqual(1000, "Hllo", () => fs.readFileSync(tmpFile.path, {flag:'r'}));
     });
 
 
     test("Test open remote file and send many changes", async () => {
         let editorSync = new MemoryEditorSync();
         await syncPortal.listener?.onOpenRemoteFile("test.txt", editorSync);
+        let activeEditor = vscode.window.activeTextEditor;
         let bufferSync = (editorSync.getBufferSync() as MemoryBufferSync);
         let bufferListener =  bufferSync.listener!;
         bufferListener.onSetText("");
-        await sleep(250);
+        await pollEqual(1000, "", () => activeEditor?.document.getText());
         bufferSync.localChanges = [];
         for(var i = 0;i<1000;i++) {
             await bufferListener.onTextChanges([new TextChange(TextChangeType.INSERT, new Position(0, 1), new Position(0, 1), "b"),new TextChange(TextChangeType.INSERT, new Position(0, 0), new Position(0, 0), "a")]);
         }
-        await sleep(250);
         assert.strictEqual(bufferSync.localChanges.length, 0);
 
     });
@@ -119,15 +115,13 @@ async function localEdit(editor: vscode.TextEditor, bufferSync: MemoryBufferSync
 }
 
 async function remoteEdit(activeEditor: vscode.TextEditor | undefined, bufferListener: IBufferListener, bufferSync: MemoryBufferSync) {
+    bufferSync.localChanges = [];
     await bufferListener.onTextChanges([new TextChange(TextChangeType.INSERT, new Position(0, 3), new Position(0, 3), "l")]);
-    await sleep(250);
-    assert.strictEqual(activeEditor?.document.getText(), "Hallo");
+    await pollEqual(1000, "Hallo", () => activeEditor?.document.getText());
     await bufferListener.onTextChanges([new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 2), "e")]);
-    await sleep(250);
-    assert.strictEqual(activeEditor?.document.getText(), "Hello");
+    await pollEqual(1000, "Hello", () => activeEditor?.document.getText());
     await bufferListener.onTextChanges([new TextChange(TextChangeType.DELETE, new Position(0, 1), new Position(0, 2), "")]);
-    await sleep(250);
-    assert.strictEqual(activeEditor?.document.getText(), "Hllo");
+    await pollEqual(1000, "Hllo", () => activeEditor?.document.getText());
 
     assert.strictEqual(bufferSync.localChanges.length, 0);
 }
@@ -136,4 +130,19 @@ function sleep(ms : number) : Promise<void> {
     return new Promise((resolve, reject) => {
         setTimeout(resolve, ms);
     });
+}
+
+async function pollEqual(timeoutInMs : number, expected : any, actual : () => any) {
+    await poll(timeoutInMs, "Expected: "+expected+" Actual: "+actual(), () => expected == actual());
+}
+
+async function poll(timeoutInMs : number, message : string, check : () => boolean) {
+    var waited = 0;
+    while(!check() && waited <= timeoutInMs) {
+        await sleep(10);
+        waited+=10;
+    }
+    if(waited>timeoutInMs) {
+        throw new Error(message);
+    }
 }

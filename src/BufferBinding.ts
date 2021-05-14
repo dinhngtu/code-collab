@@ -43,9 +43,9 @@ export default class BufferBinding implements IBufferListener {
 	}
 
 	async onSetText(text: string): Promise<void> {
-		let initPos =new vscode.Position(0,0);
-		this.remoteChanges.add(this.hashChange(new vscode.Range(initPos,initPos), text));
-		MockableApis.fs.writeFileSync(this.buffer.uri.fsPath, text);
+		let lines = this.editor?.document?.lineCount || 1;
+		let characters = this.editor?.document?.lineAt(lines-1).text.length || 0;
+		this.onTextChanges([new TextChange(TextChangeType.UPDATE, new Position(0,0), new Position(lines-1,characters), text)]);
 	}
 	
 	async onTextChanges(changes: TextChange[]): Promise<void> {
