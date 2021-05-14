@@ -38,4 +38,4 @@ jobs:
         with:
           name: vsix-file
           path: "*.vsix"
-#        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/')
