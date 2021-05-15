@@ -103,9 +103,11 @@ async function localEdit(editor: vscode.TextEditor, bufferSync: MemoryBufferSync
     await editor.edit((editBuilder) => {
         editBuilder.insert(new vscode.Position(0, 1), "a");
     });
+    await sleep(50);
     await editor.edit((editBuilder) => {
         editBuilder.replace(new vscode.Range(new vscode.Position(0, 1), new vscode.Position(0, 2)), "e");
     });
+    await sleep(50);
     await editor.edit((editBuilder) => {
         editBuilder.delete(new vscode.Range(new vscode.Position(0, 1), new vscode.Position(0, 2)));
     });
