@@ -75,9 +75,24 @@ export default class PortalBinding implements IPortalListener{
 					return;
 				}
 			}
+			this.initializeTextToRemote(event);
 			this.syncPortal.activateFileToRemote(editorSync!);
 			
 		}
+	}
+
+	private initializeTextToRemote(event: vscode.TextEditor) {
+		this.onDidChangeTextDocument({
+			document: event.document,
+			contentChanges: [
+				{
+					range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
+					rangeOffset: 0,
+					rangeLength: 0,
+					text: event.document.getText()
+				}
+			]
+		});
 	}
 
 	private async createAndRegisterEditorSyncForLocalEditor(editorSync: IEditorSync | undefined, event: vscode.TextEditor) {

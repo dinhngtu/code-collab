@@ -1,5 +1,5 @@
 import { BufferProxy, EditorProxy } from '@atom/teletype-client';
-import {deepEqual, instance, mock, verify} from 'ts-mockito'
+import {deepEqual, instance, mock, verify} from 'ts-mockito';
 import { Position } from '../../../../sync/data/position';
 import { Selection } from '../../../../sync/data/selection';
 import { IEditorListener } from '../../../../sync/iEditorListener';

@@ -68,6 +68,10 @@ suite("PortalBinding", function () {
             fileName : "test.txt",
             uri: {
                 path: "test.txt"
+            },
+            text: "test",
+            getText() {
+                return this.text;
             }
         };
         await memoryWindow.activeTextEditorChangeListener!(editor);

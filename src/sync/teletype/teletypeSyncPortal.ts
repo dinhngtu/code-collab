@@ -43,7 +43,7 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
 
     async updateTether(state: any, editorProxy: any, position: any) {
 		if (editorProxy) {
-            let uniquePath = "/"+(this.portal as any).id+"/"+(editorProxy as any).bufferProxy.uri;
+            let uniquePath = this.getUniquePath(editorProxy);
             if(this.syncsByProxy.has(editorProxy)) {
                 this.executeOnListener((listener) => {
                     listener.onOpenRemoteFile(uniquePath, this.syncsByProxy.get(editorProxy)!);
@@ -57,6 +57,10 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
             }
 		}
 	}
+
+    private getUniquePath(editorProxy: any) {
+        return "/" + (this.portal as any).id + "/" + (editorProxy as any).bufferProxy.uri;
+    }
 
     hostDidClosePortal() {
 		//TODO: implement

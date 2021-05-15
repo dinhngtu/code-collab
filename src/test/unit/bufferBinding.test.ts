@@ -5,7 +5,7 @@ import { IBufferSync } from '../../sync/iBufferSync';
 import * as vscode from 'vscode';
 import { MockableApis } from '../../base/mockableApis';
 import { ManualCyclicExecutor } from './manualCyclicExecutor';
-import { Volume } from "memfs"
+import { Volume } from "memfs";
 import { Position } from '../../sync/data/position';
 import { TextChange, TextChangeType } from '../../sync/data/textChange';
 import { MemoryEditor } from './memoryEditor';
@@ -30,7 +30,7 @@ suite("BufferBinding", function () {
         MockableApis.fs = vol;
         MockableApis.window = {
             visibleTextEditors : []
-        }
+        };
     });
 
 

@@ -261,7 +261,7 @@ declare module '@atom/teletype-client' {
 
         activeEditorDidUpdateText(...args: any[]): void;
 
-        activeEditorProxyForSiteId(...args: any[]): void;
+        activeEditorProxyForSiteId(...args: any[]): EditorProxy;
 
         assignNewSiteId(...args: any[]): void;
 
@@ -299,7 +299,7 @@ declare module '@atom/teletype-client' {
 
         getActiveSiteIds(...args: any[]): void;
 
-        getEditorProxiesMetadata(...args: any[]): void;
+        getEditorProxiesMetadata(...args: any[]): EditorProxyMetadata[];
 
         getEditorProxyMetadata(...args: any[]): void;
 
@@ -307,7 +307,7 @@ declare module '@atom/teletype-client' {
 
         getLocalActiveEditorProxy(...args: any[]): void;
 
-        getLocalSiteId(...args: any[]): void;
+        getLocalSiteId(...args: any[]): number;
 
         getSiteIdentity(...args: any[]): any;
 

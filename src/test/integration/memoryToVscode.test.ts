@@ -58,6 +58,9 @@ suite("MemoryToVscodeTest", function () {
         let bufferSync = editorSync.getBufferSync() as MemoryBufferSync;
         assert.ok(bufferSync);
 
+        assert.strictEqual(bufferSync.localChanges.length, 1);
+        assert.deepStrictEqual(bufferSync.localChanges[0], new TextChange(TextChangeType.UPDATE, new Position(0, 0), new Position(0, 0), "Halo"));
+
         bufferSync.localChanges = [];
 
         await remoteEdit(editor, bufferSync.listener!, bufferSync);
@@ -65,9 +68,8 @@ suite("MemoryToVscodeTest", function () {
         await localEdit(editor, bufferSync);
 
         await bufferSync.listener!.onSave();
-        
         await pollEqual(1000, "Hllo", () => fs.readFileSync(tmpFile.path, {flag:'r'}));
-    });
+    }).timeout(5000);
 
 
     test("Test open remote file and send many changes", async () => {
@@ -133,7 +135,9 @@ function sleep(ms : number) : Promise<void> {
 }
 
 async function pollEqual(timeoutInMs : number, expected : any, actual : () => any) {
-    await poll(timeoutInMs, "Expected: "+expected+" Actual: "+actual(), () => expected === actual());
+    // in most cases this is a string vs. a buffer, and we want that comparison to work
+    // tslint:disable-next-line: triple-equals
+    await poll(timeoutInMs, "Expected: |"+expected+"| Actual: |"+actual()+"|", () => expected == actual());
 }
 
 async function poll(timeoutInMs : number, message : string, check : () => boolean) {
