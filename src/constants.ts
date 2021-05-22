@@ -3,7 +3,7 @@
 const API_URL_BASE = 'https://api.teletype.atom.io';
 const PUSHER_KEY = 'f119821248b7429bece3';
 const PUSHER_CLUSTER = 'mt1';
-const AUTH_TOKEN = '';
+const AUTH_TOKEN = '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';
 
 module.exports = {
     API_URL_BASE,

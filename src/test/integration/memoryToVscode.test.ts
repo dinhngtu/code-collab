@@ -8,7 +8,7 @@ import { MemoryBufferSync } from "../../sync/memory/memoryBufferSync";
 import { MemoryEditorSync } from "../../sync/memory/memoryEditorSync";
 import { MemorySyncPortal } from "../../sync/memory/memorySyncPortal";
 import * as temp from 'temp';
-import { fileUrl } from '../../base/functions';
+import { fileUrl, sleep } from '../../base/functions';
 import { IBufferListener } from '../../sync/iBufferListener';
 import * as fs from 'fs';
 
@@ -127,12 +127,6 @@ async function remoteEdit(activeEditor: vscode.TextEditor | undefined, bufferLis
     await pollEqual(1000, "Hllo", () => activeEditor?.document.getText());
 
     assert.strictEqual(bufferSync.localChanges.length, 0);
-}
-
-function sleep(ms : number) : Promise<void> {
-    return new Promise((resolve, reject) => {
-        setTimeout(resolve, ms);
-    });
 }
 
 async function pollEqual(timeoutInMs : number, expected : any, actual : () => any) {

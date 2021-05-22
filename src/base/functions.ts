@@ -9,3 +9,9 @@ export function fileUrl(str : string) {
 
     return encodeURI('file://' + pathName);
 }
+
+export function sleep(ms : number) : Promise<void> {
+    return new Promise((resolve, reject) => {
+        setTimeout(resolve, ms);
+    });
+}
