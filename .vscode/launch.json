@@ -37,6 +37,10 @@
 			"outFiles": [
 				"${workspaceFolder}/out/test/**/*.js"
 			],
+			"skipFiles": [
+				"inspector_async_hook.js",
+				"async_hooks.js"
+			  ],
 			"preLaunchTask": "npm: watch"
 		}
 	]

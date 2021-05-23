@@ -2,20 +2,20 @@ import { Selection } from "../data/selection";
 import { IBufferSync } from "../iBufferSync";
 import { IEditorListener } from "../iEditorListener";
 import { IEditorSync } from "../iEditorSync";
-import { DelayedListenerExecution } from "../teletype/delayedListenerExecution";
 import { RemoteFile } from "./remoteFile";
 import * as Y from 'yjs';
 import { RemoteSelection } from "./remoteSelection";
 import { YBufferSync } from "./yBufferSync";
+import { YTransactionBasedSync } from "./yTransactionBasedSync";
 
-export class YEditorSync extends DelayedListenerExecution<IEditorListener> implements IEditorSync {
+export class YEditorSync extends YTransactionBasedSync<IEditorListener> implements IEditorSync {
 
     private bufferSync : IBufferSync;
 
-    constructor(public doc : Y.Doc, public localpeer : string, public remoteFile : RemoteFile) {
-        super();
-        this.remoteFile.selections.observe(this.onSelectionChanged.bind(this));
-        this.bufferSync = new YBufferSync(this.doc, this.localpeer, remoteFile.buffer, remoteFile.saveRequests);
+    constructor(doc : Y.Doc, localpeer : string, public remoteFile : RemoteFile) {
+        super(doc, localpeer);
+        this.remoteFile.selections.observe(this.guard(this.onSelectionChanged.bind(this)));
+        this.bufferSync = new YBufferSync(this.doc, this.localPeer, remoteFile.buffer, remoteFile.saveRequests);
     }
 
     private onSelectionChanged(event : Y.YArrayEvent<RemoteSelection>) {
@@ -65,14 +65,14 @@ export class YEditorSync extends DelayedListenerExecution<IEditorListener> imple
     sendSelectionsToRemote(selections: Selection[]): Promise<void> {
         return new Promise((resolve, reject) => {
             try {   
-                Y.transact(this.doc, (_)=>{
+                this.transact(()=>{
                     for(let i = this.remoteFile.selections.length-1;i>=0;i--) {
-                        if(this.remoteFile.selections.get(i).peer === this.localpeer) {
+                        if(this.remoteFile.selections.get(i).peer === this.localPeer) {
                             this.remoteFile.selections.delete(i);
                         }
                     }
                     for(let selection of selections) {
-                        this.remoteFile.selections.push([RemoteSelection.fromSource(this.localpeer, selection)]);
+                        this.remoteFile.selections.push([RemoteSelection.fromSource(this.localPeer, selection)]);
                     }
                     resolve();
                 });

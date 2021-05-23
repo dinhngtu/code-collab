@@ -1,24 +1,22 @@
 import { IEditorSync } from "../iEditorSync";
 import { IPortalListener } from "../iPortalListener";
 import { ISyncPortal } from "../iSyncPortal";
-import { DelayedListenerExecution } from "../teletype/delayedListenerExecution";
 import * as Y from 'yjs';
-import { Selection } from "../data/selection";
 import { YEditorSync } from "./yEditorSync";
 import { RemoteFile } from "./remoteFile";
 import * as uuid from 'uuid';
 import { RemoteSelection } from "./remoteSelection";
+import { YTransactionBasedSync } from "./yTransactionBasedSync";
 
-export class YSyncPortal extends DelayedListenerExecution<IPortalListener> implements ISyncPortal {
+export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implements ISyncPortal {
 
     private openedDocuments : Y.Array<RemoteFile>;
-    private peer = uuid.v4();
     private editorSyncsByFile = new Map<string, IEditorSync>();
 
     constructor(public doc : Y.Doc) {
-        super();
+        super(doc, uuid.v4());
         this.openedDocuments = doc.getArray("openedDocuments");
-        this.openedDocuments.observe(this.onRemoteDocumentCreated.bind(this));
+        this.openedDocuments.observe(this.guard(this.onRemoteDocumentCreated.bind(this)));
     }
 
     private onRemoteDocumentCreated(event : Y.YArrayEvent<RemoteFile>) {
@@ -51,26 +49,30 @@ export class YSyncPortal extends DelayedListenerExecution<IPortalListener> imple
     private getEditorSync(file : RemoteFile) : IEditorSync {
         let key = file.peer+":"+file.uri;
         if(!this.editorSyncsByFile.has(key)) {
-            this.editorSyncsByFile.set(key, new YEditorSync(this.doc,this.peer, file));
+            this.editorSyncsByFile.set(key, new YEditorSync(this.doc,this.localPeer, file));
         }
         return this.editorSyncsByFile.get(key)!;
     }
 
     syncLocalFileToRemote(fileid: string): Promise<IEditorSync> {
-        let remoteFile = new RemoteFile(this.peer,fileid,new Y.Array<RemoteSelection>(), new Y.Text(), false);
-        this.openedDocuments.push([remoteFile]);
-        return Promise.resolve(new YEditorSync(this.doc, this.peer, remoteFile));
+        let remoteFile = new RemoteFile(this.localPeer,fileid,new Y.Array<RemoteSelection>(), new Y.Text(), false);
+        this.transact(() => {
+            this.openedDocuments.push([remoteFile]);
+        });
+        return Promise.resolve(new YEditorSync(this.doc, this.localPeer, remoteFile));
     }
 
     activateFileToRemote(editorSync: IEditorSync): Promise<void> {
         let yEditorSync = editorSync as YEditorSync;
-        if(yEditorSync.remoteFile.peer === this.peer) {
-            for(let file of this.openedDocuments) {
-                if(file.peer === this.peer) {
-                    file.isActive = false;
+        if(yEditorSync.remoteFile.peer === this.localPeer) {
+            this.transact(() => {
+                for(let file of this.openedDocuments) {
+                    if(file.peer === this.localPeer) {
+                        file.isActive = false;
+                    }
                 }
-            }
-            yEditorSync.remoteFile.isActive = true;
+                yEditorSync.remoteFile.isActive = true;
+            });
         }
         return Promise.resolve();
     }

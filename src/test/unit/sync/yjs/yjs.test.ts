@@ -5,6 +5,10 @@ suite("YJS", function () {
     test("test yjs", async function() {
         let document = new Y.Doc();
 
+        let array = document.getArray<string>("testArray");
+        array.push(["test"]);
+        console.log(JSON.stringify(array));
+
         let text = document.getText("test");
         text.insert(0,"test");
         text.observe((event)=>{
