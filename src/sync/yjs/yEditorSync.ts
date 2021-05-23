@@ -11,10 +11,11 @@ import { YTransactionBasedSync } from "./yTransactionBasedSync";
 export class YEditorSync extends YTransactionBasedSync<IEditorListener> implements IEditorSync {
 
     private bufferSync : IBufferSync;
+    private selectionObserver = this.guard(this.onSelectionChanged.bind(this));
 
     constructor(doc : Y.Doc, localpeer : string, public remoteFile : RemoteFile) {
         super(doc, localpeer);
-        this.remoteFile.selections.observe(this.guard(this.onSelectionChanged.bind(this)));
+        this.remoteFile.selections.observe(this.selectionObserver);
         this.bufferSync = new YBufferSync(this.doc, this.localPeer, remoteFile.buffer, remoteFile.saveRequests);
     }
 
@@ -26,7 +27,11 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
 
     private syncChangedPeers(changedPeers: Set<string>, event: Y.YArrayEvent<RemoteSelection>) {
         for (let changedPeer of changedPeers) {
-            let selections: RemoteSelection[] = this.getSelectionsForPeer(event.target as Y.Array<RemoteSelection>, changedPeer);
+            let remoteSelections: RemoteSelection[] = this.getSelectionsForPeer(event.target as Y.Array<RemoteSelection>, changedPeer);
+            let selections : Selection[] = [];
+            for(let selection of remoteSelections) {
+                selections.push(selection.selection);
+            }
             this.executeOnListener((listener) => {
                 listener.onSelectionsChangedForPeer(changedPeer, selections);
             });
@@ -72,7 +77,7 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
                         }
                     }
                     for(let selection of selections) {
-                        this.remoteFile.selections.push([RemoteSelection.fromSource(this.localPeer, selection)]);
+                        this.remoteFile.selections.push([{peer : this.localPeer, selection : selection}]);
                     }
                     resolve();
                 });
@@ -88,7 +93,7 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
     }
 
     close(): void {
-        //Nothing for now
+        this.remoteFile.selections.unobserve(this.selectionObserver);
     }
 
 }
