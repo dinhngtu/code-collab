@@ -12,18 +12,20 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     private openedDocuments : Y.Array<RemoteFile>;
     private editorSyncsByFile = new Map<string, IEditorSync>();
+    private openedDocumentsObserver = this.guard(this.onRemoteDocumentCreated.bind(this));
+    private remoteDocumentObserver = this.guard(this.onRemoteDocumentChanged.bind(this));
 
     constructor(public doc : Y.Doc) {
         super(doc, uuid.v4());
         this.openedDocuments = doc.getArray("openedDocuments");
-        this.openedDocuments.observe(this.guard(this.onRemoteDocumentCreated.bind(this)));
+        this.openedDocuments.observe(this.openedDocumentsObserver);
     }
 
     private onRemoteDocumentCreated(event : Y.YArrayEvent<RemoteFile>) {
         for(let element of event.changes.added) {
             for(let file of element.content.getContent()) {
                 let remoteFile = file as RemoteFile;
-                remoteFile.observe(this.onRemoteDocumentChanged.bind(this));
+                remoteFile.observe(this.remoteDocumentObserver);
                 if(remoteFile.isActive){
                     this.activateRemoteFile(remoteFile);
                 } 
@@ -32,7 +34,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     }
 
     private async onRemoteDocumentChanged(event : Y.YMapEvent<any>, transaction : Y.Transaction) {
-        if(event.keysChanged.has("active")) {
+        if(event.keysChanged.has("isActive")) {
             let targetFile = event.target as RemoteFile;
             if(targetFile.isActive) {
                 this.activateRemoteFile(targetFile);
@@ -78,7 +80,10 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     }
 
     close(): void {
-        //don't do anything for now
+        this.openedDocuments.unobserve(this.openedDocumentsObserver);
+        for(let remoteFile of this.openedDocuments) {
+            remoteFile.unobserve(this.remoteDocumentObserver);
+        }
     }
 
 }

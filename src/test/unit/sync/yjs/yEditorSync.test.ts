@@ -1,4 +1,4 @@
-import {deepEqual, instance, mock, verify} from 'ts-mockito';
+import {anyString, anything, deepEqual, instance, mock, verify} from 'ts-mockito';
 import { Position } from '../../../../sync/data/position';
 import { Selection } from '../../../../sync/data/selection';
 import * as Y from 'yjs';
@@ -33,6 +33,7 @@ suite("YEditorSync", function () {
         let sendSelections = [new Selection("1",new Position(0,0), new Position(1,1), false, true),new Selection("2",new Position(1,1), new Position(1,2), true, false)];
         let expectedSelections = [{peer: "123",selection: sendSelections[0]},{peer: "123", selection: sendSelections[1]}];
         await editorSync.sendSelectionsToRemote(sendSelections);
+        verify(listenerClass.onSelectionsChangedForPeer(anyString(), anything())).never();
         assert.deepStrictEqual(file.selections.toArray(), expectedSelections);
     });
 

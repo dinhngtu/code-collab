@@ -45,11 +45,21 @@ export class RemoteFile extends Y.Map<any> {
         this.set("isActive", isActive);
     }
 
-    constructor(peer : string, uri : string, selections : Y.Array<RemoteSelection>, buffer : Y.Text, isActive : boolean, public saveRequests : Y.Array<string> = new Y.Array<string>()) {
+    get saveRequests() : Y.Array<string> {
+        return this.get("saveRequests");
+    }
+
+    set saveRequests(saveRequests : Y.Array<string>) {
+        this.set("saveRequests", saveRequests);
+    }
+
+    constructor(peer : string, uri : string, selections : Y.Array<RemoteSelection>, buffer : Y.Text, isActive : boolean, saveRequests : Y.Array<string> = new Y.Array<string>()) {
         super();
         this.peer = peer;
         this.uri = uri;
         this.selections = selections;
         this.buffer = buffer;
+        this.isActive = isActive;
+        this.saveRequests = saveRequests;
     }
 }
