@@ -7,6 +7,7 @@ import { TeletypeSyncPortal } from './sync/teletype/teletypeSyncPortal';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket'
 import { YSyncPortal } from './sync/yjs/ySyncPortal';
+import { CollaborationTreeDataProvider } from './view/collaborationTreeDataProvider';
 
 
 const fetch = require('node-fetch');
@@ -28,6 +29,12 @@ export function activate(context: vscode.ExtensionContext) {
 	addCreateCommand(context);
 
 	addYjsCommand(context);
+
+	vscode.window.registerTreeDataProvider("extension.collaboration", new CollaborationTreeDataProvider());
+
+	vscode.commands.registerCommand("extension.addCollabConnection", () => {
+		vscode.window.showInformationMessage(`Add connection.`)
+	});
 }
 
 function fakeWindow() {

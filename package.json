@@ -18,7 +18,8 @@
 	"activationEvents": [
 		"onCommand:extension.join-portal",
 		"onCommand:extension.create-portal",
-		"onCommand:extension.yjs-websocket"
+		"onCommand:extension.yjs-websocket", 
+		"onView:extension.collaboration"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -34,8 +35,33 @@
 			{
 				"command": "extension.yjs-websocket",
 				"title": "Join YJS Websocket Room"
+			}, 
+			{
+				"command": "extension.addCollabConnection",
+				"title": "Add",
+				"icon": {
+					"light": "resources/light/add.svg",
+					"dark": "resources/dark/add.svg"
+				}
 			}
-		]
+		],
+		"views": {
+			"explorer": [
+				{
+					"id": "extension.collaboration", 
+					"name": "Collaboration"
+				}
+			]
+		}, 
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "extension.addCollabConnection", 
+					"when": "view == extension.collaboration && viewItem == connections",
+					"group": "inline"
+				}
+			]
+		}
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
