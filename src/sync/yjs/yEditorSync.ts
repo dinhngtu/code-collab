@@ -2,7 +2,7 @@ import { Selection } from "../data/selection";
 import { IBufferSync } from "../iBufferSync";
 import { IEditorListener } from "../iEditorListener";
 import { IEditorSync } from "../iEditorSync";
-import { RemoteFile } from "./remoteFile";
+import { IRemoteFile, RemoteFile } from "./remoteFile";
 import * as Y from 'yjs';
 import { RemoteSelection } from "./remoteSelection";
 import { YBufferSync } from "./yBufferSync";
@@ -13,7 +13,7 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
     private bufferSync : IBufferSync;
     private selectionObserver = this.guard(this.onSelectionChanged.bind(this));
 
-    constructor(doc : Y.Doc, localpeer : string, public remoteFile : RemoteFile) {
+    constructor(doc : Y.Doc, localpeer : string, public remoteFile : IRemoteFile) {
         super(doc, localpeer);
         this.remoteFile.selections.observe(this.selectionObserver);
         this.bufferSync = new YBufferSync(this.doc, this.localPeer, remoteFile.buffer, remoteFile.saveRequests);

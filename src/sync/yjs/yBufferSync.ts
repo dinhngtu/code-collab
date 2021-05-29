@@ -16,6 +16,17 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
         super(doc, localpeer);
         this.buffer.observe(this.bufferObserver);
         this.remoteSaveRequests.observe(this.saveObserver);
+        this.initBuffer();
+    }
+
+    private initBuffer() {
+        if (this.buffer.length > 0) {
+            this.currentText = this.buffer.toString();
+            let text = ""+this.currentText;
+            this.executeOnListener((listener) => {
+                listener.onSetText(text);
+            });
+        }
     }
 
     private onRemoteTextChanged(event : Y.YTextEvent) {

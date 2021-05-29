@@ -56,6 +56,15 @@ suite("PortalBinding", function () {
         await testOpenRemoteFile(portalBinding, fsPromisesClass, vol, memoryWorkspace, memoryWindow, commandsClass);
     });
 
+    test("test close remote file client", async function() {   
+        let portalBinding = await createAndInitPortalBinding(syncPortal, false);   
+        let mockEditorSync = await openRemoteFile(portalBinding);
+
+        await portalBinding.onCloseRemoteFile(mockEditorSync.value);
+
+        verify(commandsClass.executeCommand('workbench.action.closeActiveEditor')).once();
+    }).timeout(10000);
+
     test("test open remote file host", async function() {   
         let portalBinding = await createAndInitPortalBinding(syncPortal, true);     
         await testOpenRemoteFile(portalBinding, fsPromisesClass, vol, memoryWorkspace, memoryWindow, commandsClass);
@@ -111,6 +120,18 @@ suite("PortalBinding", function () {
 
 
 
+async function openRemoteFile(portalBinding: PortalBinding) {
+    let mockEditorSyncClass = mock<IEditorSync>();
+    let mockEditorSync = instance(mockEditorSyncClass);
+    let mockBufferSyncClass = mock<IBufferSync>();
+    let mockBufferSync = instance(mockBufferSyncClass);
+    (mockEditorSync as any).bufferSync = mockBufferSync;
+    when(mockEditorSyncClass.getBufferSync()).thenReturn(mockBufferSync);
+
+    await portalBinding.onOpenRemoteFile("test.txt", mockEditorSync);
+    return new MockWrapper(mockEditorSync);
+}
+
 async function createAndInitPortalBinding(syncPortal: MemorySyncPortal, isHost : boolean) : Promise<PortalBinding> {
     let portalBinding = new PortalBinding(syncPortal, isHost);
     await portalBinding.initialize();
@@ -128,7 +149,7 @@ async function testOpenRemoteFile(portalBinding: PortalBinding, fsPromisesClass:
     when(mockEditorSyncClass.getBufferSync()).thenReturn(mockBufferSync);
 
     await portalBinding.onOpenRemoteFile("test.txt", mockEditorSync);
-    verify(fsPromisesClass.mkdir(os.tmpdir(), deepEqual({ recursive: true }))).once();
+    
     let content = vol.readFileSync(path.join(os.tmpdir(), "test.txt")).toString();
     assert.strictEqual(content, "");
     assert.strictEqual(memoryWorkspace.openedTextDocuments.size, 1);
@@ -139,20 +160,18 @@ async function testOpenRemoteFile(portalBinding: PortalBinding, fsPromisesClass:
     assert.strictEqual(memoryWindow.createdTextEditors.size, 1);
     verify(commandsClass.executeCommand('workbench.action.keepEditor')).once();
 
-    //TODO: Test closed editor
+    //Test closed editor
     var oldEditor = memoryWindow.createdTextEditors.values().next().value;
     await portalBinding.onOpenRemoteFile("test.txt", mockEditorSync);
-    verify(fsPromisesClass.mkdir(os.tmpdir(), deepEqual({ recursive: true }))).once();
     assert.strictEqual(memoryWorkspace.openedTextDocuments.size, 1);
     assert.strictEqual(memoryWindow.createdTextEditors.size, 1);
     assert.notStrictEqual(memoryWindow.createdTextEditors.values().next().value, oldEditor);
     verify(commandsClass.executeCommand('workbench.action.keepEditor')).twice();
 
-    //TODO: Test existing editor
+    //Test existing editor
     oldEditor = memoryWindow.createdTextEditors.values().next().value;
     memoryWindow.visibleTextEditors.push(...memoryWindow.createdTextEditors.values());
     await portalBinding.onOpenRemoteFile("test.txt", mockEditorSync);
-    verify(fsPromisesClass.mkdir(os.tmpdir(), deepEqual({ recursive: true }))).once();
     assert.strictEqual(memoryWorkspace.openedTextDocuments.size, 1);
     assert.strictEqual(memoryWindow.createdTextEditors.size, 1);
     assert.strictEqual(memoryWindow.createdTextEditors.values().next().value, oldEditor);

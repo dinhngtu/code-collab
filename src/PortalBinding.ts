@@ -16,13 +16,23 @@ export default class PortalBinding implements IPortalListener{
 	private editorBindingsByEditorSync = new Map<IEditorSync, EditorBinding>();
 	private bufferBindingsByBufferSync = new Map<IBufferSync, BufferBinding>();
 	private bufferBindingsByBuffer = new Map<vscode.TextDocument, BufferBinding>();
+	private bufferSyncsByBuffer = new Map<vscode.TextDocument, IBufferSync>();
 	private editorBindingsByEditor = new Map<vscode.TextEditor, EditorBinding>();
 	private editorSyncsByEditor = new WeakMap<vscode.TextEditor, IEditorSync>();
+	private editorsBySyncs = new Map<IEditorSync, vscode.TextEditor>();
 	private remoteFiles = new Set<string>();
 
 
 	constructor(public syncPortal : ISyncPortal, public isHost : boolean) {
 
+	}
+
+	async onCloseRemoteFile(editorSync: IEditorSync): Promise<void> {
+		let editor = this.editorsBySyncs.get(editorSync);
+		if(editor) {
+			await MockableApis.window.showTextDocument(editor.document);
+            MockableApis.commands.executeCommand('workbench.action.closeActiveEditor');
+		}
 	}
 
 	async onOpenRemoteFile(uniqueUri: string, editorSync: IEditorSync): Promise<void> {
@@ -48,11 +58,31 @@ export default class PortalBinding implements IPortalListener{
 	private onDidChangeVisibleTextEditors(editors : vscode.TextEditor[]) {
 		for(let editor of this.editorBindingsByEditor.keys()) {
 			if(!editors.includes(editor)) {
-				this.editorBindingsByEditor.delete(editor);
-				this.editorSyncsByEditor.get(editor)!.close();
-				this.editorSyncsByEditor.delete(editor);
+				let editorSync = this.editorSyncsByEditor.get(editor)!;
+				let buffer = editor.document;
+				let bufferSync = this.bufferSyncsByBuffer.get(buffer)!;
+				if(this.remoteFiles.has(buffer.uri.path.toLocaleLowerCase())) {
+					if(bufferSync) {
+						bufferSync.close();
+					}
+					editorSync.close();
+				} else {
+					this.syncPortal.closeFileToRemote(editorSync);
+				}
+				this.clearEditorFromCaches(buffer, bufferSync, editor, editorSync);
 			}
 		}
+	}
+
+	private clearEditorFromCaches(buffer: vscode.TextDocument, bufferSync: IBufferSync, editor: vscode.TextEditor, editorSync: IEditorSync) {
+		this.bufferBindingsByBuffer.delete(buffer);
+		this.bufferBindingsByBufferSync.delete(bufferSync);
+
+		this.bufferSyncsByBuffer.delete(buffer);
+		this.editorBindingsByEditor.delete(editor);
+		this.editorsBySyncs.delete(editorSync);
+
+		this.editorSyncsByEditor.delete(editor);
 	}
 
 	private onDidChangeTextDocument (event : vscode.TextDocumentChangeEvent) {
@@ -159,6 +189,7 @@ export default class PortalBinding implements IPortalListener{
 		this.editorBindingsByEditorSync.set(editorSync, editorBinding);
 		this.editorSyncsByEditor.set(editor, editorSync);
 		this.editorBindingsByEditor.set(editor, editorBinding);
+		this.editorsBySyncs.set(editorSync, editor);
 	}
 
 	private async findOrCreateBufferForBufferSync (bufferSync : IBufferSync, uniqueUrl : string) : Promise<vscode.TextDocument> {
@@ -185,12 +216,16 @@ export default class PortalBinding implements IPortalListener{
 		let bufferBinding = new BufferBinding(buffer, bufferSync);
 		this.bufferBindingsByBuffer.set(buffer, bufferBinding);
 		this.bufferBindingsByBufferSync.set(bufferSync, bufferBinding);
+		this.bufferSyncsByBuffer.set(buffer, bufferSync);
 	}
 
 	private async createTemporaryFileForBufferUrl(uniqueUrl: string) {
 		const bufferPath = path.join(os.tmpdir(), uniqueUrl);
 		const bufferURI = vscode.Uri.parse(fileUrl(bufferPath));
-		await MockableApis.fsPromises.mkdir(path.dirname(bufferPath), { recursive: true });
+		let parent = path.dirname(bufferPath);
+		if(!MockableApis.fs.existsSync(parent)) {
+			await MockableApis.fsPromises.mkdir(parent, { recursive: true });
+		}
 		MockableApis.fs.writeFileSync(bufferURI.fsPath, '');
 		return bufferURI;
 	}

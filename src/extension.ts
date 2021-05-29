@@ -4,6 +4,9 @@ import * as vscode from 'vscode';
 import { Portal, TeletypeClient } from '@atom/teletype-client';
 import PortalBinding from './PortalBinding';
 import { TeletypeSyncPortal } from './sync/teletype/teletypeSyncPortal';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket'
+import { YSyncPortal } from './sync/yjs/ySyncPortal';
 
 
 const fetch = require('node-fetch');
@@ -11,10 +14,7 @@ const constants = require('./constants');
 const globalAny: any = global;
 const wrtc = require('wrtc');
 
-globalAny.window = {};
-globalAny.window = global;
-globalAny.window.fetch = fetch;
-globalAny.RTCPeerConnection = wrtc.RTCPeerConnection;
+
 
 var activePortal : Portal | null = null;
 
@@ -26,18 +26,63 @@ export function activate(context: vscode.ExtensionContext) {
 	addJoinCommand(context);
 
 	addCreateCommand(context);
+
+	addYjsCommand(context);
+}
+
+function fakeWindow() {
+	globalAny.window = {};
+	globalAny.window = global;
+	globalAny.window.fetch = fetch;
+	globalAny.RTCPeerConnection = wrtc.RTCPeerConnection;
+}
+
+function unfakeWindow() {
+	globalAny.window = undefined;
 }
 
 function addCreateCommand(context: vscode.ExtensionContext) {
 	let createCommand = vscode.commands.registerCommand('extension.create-portal', async () => {
+		fakeWindow();
 		await createPortal();
 	});
 	context.subscriptions.push(createCommand);
 }
 
+function addYjsCommand(context: vscode.ExtensionContext) {
+	let yjsCommand = vscode.commands.registerCommand('extension.yjs-websocket', async () => {
+		unfakeWindow();
+		let yjsUrl = await vscode.window.showInputBox({ prompt: 'Enter the url to the YJS Websocket server' });
+		if(!yjsUrl) {
+			vscode.window.showInformationMessage("No YJS URL has been entered. Please try again");
+		} else {
+			let yjsRoom = await vscode.window.showInputBox({ prompt: 'Enter the YJS Room you wish to join or create' });
+			if(!yjsRoom) {
+				vscode.window.showInformationMessage("No YJS Room has been entered. Please try again");
+			} else {
+				vscode.window.showInformationMessage('Trying to connect to YJS URL ' + yjsUrl + ' and room '+yjsRoom);
+				let doc = new Y.Doc();
+				const wsProvider = new WebsocketProvider(yjsUrl, yjsRoom, doc, { WebSocketPolyfill: require('ws') });
+				wsProvider.on('status', (event : any) => {
+					let status = event.status;
+					if(status === "connected") {
+						vscode.window.showInformationMessage('Connected to YJS URL ' + yjsUrl + ' and room '+yjsRoom);
+					} else {
+						vscode.window.showInformationMessage('Connection stringstatus YJS URL ' + yjsUrl + ' and room '+yjsRoom+ " = "+status);
+					}
+				});
+				let binding = new PortalBinding(new YSyncPortal(doc), true);
+				binding.initialize();
+			}
+		}
+		
+	});
+	context.subscriptions.push(yjsCommand);
+}
+
 function addJoinCommand(context: vscode.ExtensionContext) {
 	let joinCommand = vscode.commands.registerCommand('extension.join-portal', async () => {
-
+		fakeWindow();
 		let portalIdInput = await getPortalID();
 		if (!portalIdInput) {
 			vscode.window.showInformationMessage("No Portal ID has been entered. Please try again");

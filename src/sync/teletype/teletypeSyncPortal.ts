@@ -13,6 +13,10 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
         super();
         this.portal.setDelegate(this);
     }
+
+    async closeFileToRemote(editorSync: IEditorSync): Promise<void> {
+        editorSync.close();
+    }
     
     close(): void {
         this.portal.dispose();

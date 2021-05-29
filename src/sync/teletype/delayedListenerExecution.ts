@@ -17,6 +17,6 @@ export abstract class DelayedListenerExecution<T> {
         for(let call of this.cachedCalls) {
             call(this.listener);
         }
-        this.cachedCalls=[];
+        this.cachedCalls = [];
     }
 }

@@ -63,6 +63,7 @@ export class MemoryWorkspace {
 
     async openTextDocument(uri : vscode.Uri) : Promise<vscode.TextDocument> {
         let document = new MockTextDocument();
+        document.uri = uri;
         this.openedTextDocuments.set(uri, document);
         return document;
     }

@@ -34,6 +34,7 @@ suite("TeletypeSyncPortal", function () {
         verify(portalClass.createEditorProxy(deepEqual({bufferProxy}))).once();
     });
 
+
     test("Test close", function() {
         portalSync.close();
         verify(portalClass.dispose()).once();
@@ -44,6 +45,14 @@ suite("TeletypeSyncPortal", function () {
         let editorSync = new TeletypeEditorSync(editorProxy);
         await portalSync.activateFileToRemote(editorSync);
         verify(portalClass.activateEditorProxy(editorProxy)).once();
+    });
+
+
+    test("Test closeFileToRemote", async function() {
+        let editorSyncClass = mock<IEditorSync>();
+        let editorSync = instance(editorSyncClass);
+        await portalSync.closeFileToRemote(editorSync);
+        verify(editorSyncClass.close()).once();
     });
 
     test("Test dispose", function() {

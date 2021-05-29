@@ -5,23 +5,26 @@ suite("YJS", function () {
     test("test yjs", async function() {
         let document = new Y.Doc();
 
-        let array = document.getArray<string>("testArray");
-        array.push(["test"]);
-        console.log(JSON.stringify(array));
+        let array = document.getArray("testArray");
+        let insertMap = new Y.Map<any>();
+        insertMap.set("test","test");
+        array.insert(0, [insertMap]);
+        array.observe(event => {
+            for(let deleted of event.changes.deleted) {
+                console.log(JSON.stringify(deleted));
+            };
+        });
+        array.delete(0);
 
-        let text = document.getText("test");
-        text.insert(0,"test");
-        text.observe((event)=>{
-            console.log("text: "+JSON.stringify(event.changes));
+        let map = document.getMap("test");
+        map.observe(event => {
+            console.log(JSON.stringify(event));
         });
-        Y.transact(document, (_) => {
-            text.insert(1,"a");
-            text.insert(2,"b");
-            text.insert(2,"cd"); 
-            text.insert(6, "d");  
-            text.delete(0,1);
-            console.log(text.toString()); 
-        });
+        map.set("test", "123");
+
+        
+
+        map.delete("test");
         
     });
 
