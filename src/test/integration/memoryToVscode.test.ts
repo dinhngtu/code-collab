@@ -100,20 +100,21 @@ async function closeOpenWindows() {
 }
 
 async function localEdit(editor: vscode.TextEditor, bufferSync: MemoryBufferSync) {
+    await sleep(100);
     await editor.edit((editBuilder) => {
         editBuilder.insert(new vscode.Position(0, 1), "a");
     });
-    await sleep(50);
+    pollEqual(500, 1, () => bufferSync.localChanges.length);
+    assert.deepStrictEqual(bufferSync.localChanges[0], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 1), "a"));
     await editor.edit((editBuilder) => {
         editBuilder.replace(new vscode.Range(new vscode.Position(0, 1), new vscode.Position(0, 2)), "e");
     });
-    await sleep(50);
+    pollEqual(500, 2, () => bufferSync.localChanges.length);
+    assert.deepStrictEqual(bufferSync.localChanges[1], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 2), "e"));
     await editor.edit((editBuilder) => {
         editBuilder.delete(new vscode.Range(new vscode.Position(0, 1), new vscode.Position(0, 2)));
     });
     pollEqual(500, 3, () => bufferSync.localChanges.length);
-    assert.deepStrictEqual(bufferSync.localChanges[0], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 1), "a"));
-    assert.deepStrictEqual(bufferSync.localChanges[1], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 2), "e"));
     assert.deepStrictEqual(bufferSync.localChanges[2], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 2), ""));
 }
 

@@ -10,6 +10,7 @@ export class MemoryBufferSync implements IBufferSync {
     closeCount = 0;
 
     sendChangeToRemote(change: TextChange): Promise<void> {
+        console.debug("Storing change "+JSON.stringify(change));
         this.localChanges.push(change);
         return Promise.resolve();
     }
