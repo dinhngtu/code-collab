@@ -32,7 +32,7 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
             for(let selection of remoteSelections) {
                 selections.push(selection.selection);
             }
-            this.executeOnListener((listener) => {
+            this.executeOnListener(async (listener) => {
                 listener.onSelectionsChangedForPeer(changedPeer, selections);
             });
         }

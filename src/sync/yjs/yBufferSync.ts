@@ -23,7 +23,7 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
         if (this.buffer.length > 0) {
             this.currentText = this.buffer.toString();
             let text = ""+this.currentText;
-            this.executeOnListener((listener) => {
+            this.executeOnListener(async (listener) => {
                 listener.onSetText(text);
             });
         }
@@ -47,13 +47,13 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
             }
         }
 
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.onTextChanges(changes.reverse());
         });
     }
 
     private onRemoteSave(event : Y.YArrayEvent<string>){
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.onSave();
         });
         this.transact(() => {

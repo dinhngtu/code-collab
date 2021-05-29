@@ -25,6 +25,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     constructor(public doc : Y.Doc) {
         super(doc, uuid.v4());
+        console.debug("Starting YSyncPortal "+this.localPeer);
         this.peers = doc.getMap("peers");
         this.peers.set(this.localPeer, new Y.Map<Y.Map<any>>());
         for(let peer of this.peers.keys()) {
@@ -40,6 +41,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     private onPeerEvent(event : Y.YMapEvent<Y.Map<Y.Map<any>>>) {
         for(let changedKey of event.keysChanged) {
             let change = event.changes.keys.get(changedKey)!;
+            console.debug("Processing "+change.action+" for peer "+changedKey);
             if(change.action === "add") {
                 this.onPeerAdded(changedKey, this.peers.get(changedKey)!);
             } else if(change.action === "delete") {
@@ -49,6 +51,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     }
 
     private onPeerAdded(peer : string, files : Y.Map<Y.Map<any>>) {
+        console.debug("Adding peer "+peer);
         for(let fileName of files.keys()) {
             this.onFileAdded(peer, fileName, files.get(fileName)!);
         }
@@ -66,6 +69,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     }
 
     private onPeerDeleted(peer : string) {
+        console.debug("Deleting peer "+peer);
         let peerFiles = this.editorSyncsByPeerAndFile.get(peer);
         if(peerFiles) {
             for(let fileName of peerFiles.keys()) {
@@ -74,22 +78,26 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         }
     }
 
-    private onFilesChanged(peer : string, event : Y.YMapEvent<Y.Map<any>>) {
+    private async onFilesChanged(peer : string, event : Y.YMapEvent<Y.Map<any>>) {
         for(let changedKey of event.keysChanged) {
             let change = event.changes.keys.get(changedKey)!;
-            if(change.action === "add") {
-                this.onFileAdded(peer, changedKey, this.peers.get(peer)!.get(changedKey)!);
-            } else if(change.action === "delete") {
-                this.onFileDeleted(peer, changedKey);
-            }
+            console.debug("Handling "+change.action+" for file "+changedKey+"@"+peer);
+            if(change.action === "delete" || change.action === "update") {
+                await this.onFileDeleted(peer, changedKey);
+            } 
+
+            if(change.action === "add" || change.action === "update") {
+                await this.onFileAdded(peer, changedKey, this.peers.get(peer)!.get(changedKey)!);
+            } 
         }
     }
 
-    private onFileAdded(peer : string, key : string, file : Y.Map<any>) {
+    private async onFileAdded(peer : string, key : string, file : Y.Map<any>) {
         let remoteFile = new RemoteFileProxy(file);
+        console.debug("Adding remote file "+key+"@"+peer+"(active="+remoteFile.isActive+")");
         this.addObserverOnFile(peer, key, file);
         if (remoteFile.isActive) {
-            this.activateRemoteFile(peer, key, remoteFile);
+            await this.activateRemoteFile(peer, key, remoteFile);
         }
     }
 
@@ -103,13 +111,14 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         });
     }
 
-    private onFileDeleted(peer : string, key : string) {
+    private async onFileDeleted(peer : string, key : string) {
+        console.debug("Deleting remote file "+key+"@"+peer);
         let sync = this.editorSyncsByPeerAndFile.get(peer)?.get(key);
         if(sync) {
             this.editorSyncsByPeerAndFile.get(peer)?.delete(key);
             this.peerAndKeyByEditorSync.delete(sync);
-            this.executeOnListener((listener) => {
-                listener.onCloseRemoteFile(sync!);
+            await this.executeOnListener(async (listener) => {
+                await listener.onCloseRemoteFile(sync!);
             });
         }
     }
@@ -118,33 +127,50 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         if(event.keysChanged.has("isActive")) {
             let targetFile = new RemoteFileProxy(event.target as Y.Map<any>);
             if(targetFile.isActive) {
-                this.activateRemoteFile(peer, key, targetFile);
+                console.debug("Remote File "+key+"@"+peer+" has been activated");
+                await this.activateRemoteFile(peer, key, targetFile);
             }
         }
     }
 
-    private activateRemoteFile(peer : string, key : string, targetFile: IRemoteFile) {
-        this.executeOnListener(async (listener) => {
+    private async activateRemoteFile(peer : string, key : string, targetFile: IRemoteFile) {
+        await this.executeOnListener(async (listener) => {
             await listener.onOpenRemoteFile(targetFile.uri, this.getEditorSync(peer, key, targetFile));
         });
     }
 
     private getEditorSync(peer : string, key : string, file : IRemoteFile) : IEditorSync {
-        if(!this.editorSyncsByPeerAndFile.has(peer)) {
-            this.editorSyncsByPeerAndFile.set(peer, new Map<string, IEditorSync>());
-        }
+        this.addPeerCache(peer);
         if(!this.editorSyncsByPeerAndFile.get(peer)!.has(key)) {    
-            let sync = new YEditorSync(this.doc,this.localPeer, file);
-            this.editorSyncsByPeerAndFile.get(peer)!.set(key, sync);
-            this.peerAndKeyByEditorSync.set(sync, {peer : peer, key : key});
+            this.createNewEditorSync(file, peer, key);
         }
         return this.editorSyncsByPeerAndFile.get(peer)!.get(key)!;
     }
 
+    private forceNewEditorSync(peer : string, key : string, file : IRemoteFile) : IEditorSync {
+        this.addPeerCache(peer);
+        this.createNewEditorSync(file, peer, key);
+        return this.editorSyncsByPeerAndFile.get(peer)!.get(key)!;
+    }
+
+    private addPeerCache(peer: string) {
+        if (!this.editorSyncsByPeerAndFile.has(peer)) {
+            this.editorSyncsByPeerAndFile.set(peer, new Map<string, IEditorSync>());
+        }
+    }
+
+    private createNewEditorSync(file: IRemoteFile, peer: string, key: string) {
+        let sync = new YEditorSync(this.doc, this.localPeer, file);
+        this.editorSyncsByPeerAndFile.get(peer)!.set(key, sync);
+        this.peerAndKeyByEditorSync.set(sync, { peer: peer, key: key });
+    }
+
     async closeFileToRemote(editorSync: IEditorSync): Promise<void> {
+        console.debug("Closing local file "+editorSync);
         this.transact(() => {
             let peerAndKey = this.peerAndKeyByEditorSync.get(editorSync);
             if(peerAndKey) {
+                console.debug("Sending file closure to remote "+peerAndKey.key+"@"+peerAndKey.peer);
                 this.peerAndKeyByEditorSync.delete(editorSync);
                 this.editorSyncsByPeerAndFile.get(peerAndKey.peer)?.delete(peerAndKey.key);
                 let files = this.peers.get(peerAndKey.peer);
@@ -156,14 +182,16 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     }
 
     syncLocalFileToRemote(fileid: string): Promise<IEditorSync> {
+        console.debug("Syncing local file "+fileid+"@"+this.localPeer+" to remote");
         let remoteFile = new RemoteFile(this.localPeer,fileid,new Y.Array<RemoteSelection>(), new Y.Text(), false);
         this.transact(() => {
             this.peers.get(this.localPeer)!.set(fileid, remoteFile);
         });
-        return Promise.resolve(this.getEditorSync(this.localPeer, fileid, remoteFile));
+        return Promise.resolve(this.forceNewEditorSync(this.localPeer, fileid, remoteFile));
     }
 
     activateFileToRemote(editorSync: IEditorSync): Promise<void> {
+        console.debug("Activating file "+editorSync);
         let yEditorSync = editorSync as YEditorSync;
         if(yEditorSync.remoteFile.peer === this.localPeer) {
             this.transact(() => {
@@ -171,6 +199,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
                 for(let file of files.keys()) {
                     new RemoteFileProxy(files.get(file)!).isActive = false;
                 }
+                console.debug("Activating file "+yEditorSync.remoteFile.uri+"@"+this.localPeer+" to remote");
                 yEditorSync.remoteFile.isActive = true;
             });
         }
@@ -178,6 +207,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     }
 
     close(): void {
+        console.debug("Closing portal "+this.localPeer);
         for(let cleanup of this.cleanupHandlers) {
             cleanup();
         }

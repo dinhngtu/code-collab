@@ -96,9 +96,11 @@ export default class PortalBinding implements IPortalListener{
 
 	private async onDidChangeActiveTextEditor (event : vscode.TextEditor | undefined) {
 		if(this.isHost && event && !this.remoteFiles.has(event.document.uri.path.toLocaleLowerCase())) {
+			console.debug("activating editor "+event.document.uri.path);
 			let editorSync = this.editorSyncsByEditor.get(event);
 			if(!editorSync) {
 				try {
+					console.debug("Creating new editor sync");
 					editorSync = await this.createAndRegisterEditorSyncForLocalEditor(editorSync, event);
 				} catch(error) {
 					console.log(error);

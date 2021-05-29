@@ -47,7 +47,7 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
 	}
 
     dispose() {
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.dispose();
         });
 	}
@@ -64,13 +64,13 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
                 selections.push(new Selection(selectionId, selectionUpdate.range.start, selectionUpdate.range.end, selectionUpdate.reversed, this.isCursor(selectionUpdate)));
             }
         }
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.onSelectionsChangedForPeer(""+siteId, selections);
         });
 	}
 
     clearSelectionsForSiteId(siteId: number) {
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.onSelectionsChangedForPeer(""+siteId, []);
         });
     }

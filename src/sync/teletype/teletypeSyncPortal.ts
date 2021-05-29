@@ -40,7 +40,7 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     }
 
     dispose() {
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.dispose();
         });
     }
@@ -49,13 +49,13 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
 		if (editorProxy) {
             let uniquePath = this.getUniquePath(editorProxy);
             if(this.syncsByProxy.has(editorProxy)) {
-                this.executeOnListener((listener) => {
+                this.executeOnListener(async (listener) => {
                     listener.onOpenRemoteFile(uniquePath, this.syncsByProxy.get(editorProxy)!);
                 });
             } else {
                 let editorSync = new TeletypeEditorSync(editorProxy);
                 this.syncsByProxy.set(editorProxy, editorSync);
-                this.executeOnListener((listener) => {
+                this.executeOnListener(async (listener) => {
                     listener.onOpenRemoteFile(uniquePath,editorSync);
                 });
             }

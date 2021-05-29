@@ -6,12 +6,14 @@ import { Position } from './sync/data/position';
 import { Queue } from 'queue-typescript';
 import { MockableApis } from './base/mockableApis';
 
+type EditCallback = () => Promise<void>;
+
 export default class BufferBinding implements IBufferListener {
 	private disposed!: boolean;
 	public editor : vscode.TextEditor | null = null;
 	public editInProgress = false;
 	public disableLocalUpdates = false;
-	public edits = new Queue<TextChange>();
+	public edits = new Queue<EditCallback>();
 
 	constructor(public buffer : vscode.TextDocument, public bufferSync : IBufferSync) {
 		bufferSync.setListener(this);
@@ -31,7 +33,7 @@ export default class BufferBinding implements IBufferListener {
 		if(MockableApis.window.visibleTextEditors.includes(this.editor!)) {
 			let edit = this.edits.dequeue();
 			while (edit) {
-				await this.handleEdit(edit);
+				edit();
 				edit = this.edits.dequeue();
 			}
 		}
@@ -48,15 +50,17 @@ export default class BufferBinding implements IBufferListener {
 
 
 	private setTextAsChange(text: string) {
-		let lines = this.editor?.document?.lineCount || 1;
-		let characters = this.editor?.document?.lineAt(lines - 1).text.length || 0;
-		this.onTextChanges([new TextChange(TextChangeType.UPDATE, new Position(0, 0), new Position(lines - 1, characters), text)]);
+		this.edits.enqueue(async () => {
+			let lines = this.editor?.document?.lineCount || 1;
+			let characters = this.editor?.document?.lineAt(lines - 1).text.length || 0;
+			await this.handleEdit(new TextChange(TextChangeType.UPDATE, new Position(0, 0), new Position(lines - 1, characters), text));
+		});
 	}
 
 	async onTextChanges(changes: TextChange[]): Promise<void> {
 		for (let i = changes.length - 1; i >= 0; i--) {
 			const textUpdate = changes[i];
-			this.edits.enqueue(textUpdate);
+			this.edits.enqueue(async () => { await this.handleEdit(textUpdate)});
 		}
 	}
 	
