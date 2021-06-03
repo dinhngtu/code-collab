@@ -133,7 +133,7 @@ async function openRemoteFile(portalBinding: PortalBinding) {
 }
 
 async function createAndInitPortalBinding(syncPortal: MemorySyncPortal, isHost : boolean) : Promise<PortalBinding> {
-    let portalBinding = new PortalBinding(syncPortal, isHost);
+    let portalBinding = new PortalBinding(syncPortal, isHost, "test");
     await portalBinding.initialize();
     assert.strictEqual(syncPortal.localFiles.length, isHost ? 1: 0);
     assertBindings(syncPortal);

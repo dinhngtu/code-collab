@@ -5,12 +5,17 @@ import { MemoryEditorSync } from "./memoryEditorSync";
 
 export class MemorySyncPortal implements ISyncPortal {
     
+    
 
     localFiles : string[] = [];
     editorSyncFiles = new Map<IEditorSync, string>();
     activeEditorSync : IEditorSync | null = null;
     listener : IPortalListener | null = null;
     closeCount = 0;
+
+    getType(): string {
+        return "Memory";
+    }
 
     async closeFileToRemote(editorSync: IEditorSync): Promise<void> {
         let fileid = this.editorSyncFiles.get(editorSync);

@@ -13,6 +13,9 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
         super();
         this.portal.setDelegate(this);
     }
+    getType(): string {
+        return "Teletype";
+    }
 
     async closeFileToRemote(editorSync: IEditorSync): Promise<void> {
         editorSync.close();

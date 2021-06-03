@@ -16,29 +16,15 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.join-portal",
-		"onCommand:extension.create-portal",
-		"onCommand:extension.yjs-websocket", 
+		"onCommand:extension.addCollabConnection", 
 		"onView:extension.collaboration"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.join-portal",
-				"title": "Join Portal"
-			},
-			{
-				"command": "extension.create-portal",
-				"title": "Create Portal"
-			},
-			{
-				"command": "extension.yjs-websocket",
-				"title": "Join YJS Websocket Room"
-			}, 
-			{
 				"command": "extension.addCollabConnection",
-				"title": "Add",
+				"title": "Add Collaboration Connection",
 				"icon": {
 					"light": "resources/light/add.svg",
 					"dark": "resources/dark/add.svg"

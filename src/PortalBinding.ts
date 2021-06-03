@@ -23,8 +23,16 @@ export default class PortalBinding implements IPortalListener{
 	private remoteFiles = new Set<string>();
 
 
-	constructor(public syncPortal : ISyncPortal, public isHost : boolean) {
+	constructor(public syncPortal : ISyncPortal, public isHost : boolean, public name : string) {
 
+	}
+
+	getName() : string {
+		return this.name;
+	}
+
+	getType() : string {
+		return this.syncPortal.getType();
 	}
 
 	async onCloseRemoteFile(editorSync: IEditorSync): Promise<void> {

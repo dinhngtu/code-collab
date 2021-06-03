@@ -16,7 +16,7 @@ suite("MemoryToVscodeTest", function () {
 
     let syncPortal = new MemorySyncPortal();
 
-    let portalBinding = new PortalBinding(syncPortal, true);
+    let portalBinding = new PortalBinding(syncPortal, true, "test");
 
     suiteSetup(async () => {
         MockableApis.restore();

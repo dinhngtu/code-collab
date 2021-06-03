@@ -3,8 +3,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 
 export class ConnectionsTreeElement extends vscode.TreeItem implements CollaborationTreeElement {
-    constructor() {
-        super("Connections");
+    constructor(children : boolean) {
+        super("Connections",children ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
         console.log(JSON.stringify(this.iconPath));
     }
 

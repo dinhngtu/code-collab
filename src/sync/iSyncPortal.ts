@@ -7,4 +7,5 @@ export interface ISyncPortal {
     closeFileToRemote(editorSync : IEditorSync) : Promise<void>;
     setListener(listener : IPortalListener) : void;
     close() : void;
+    getType() : string;
 }

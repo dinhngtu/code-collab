@@ -249,6 +249,9 @@ declare module '@atom/teletype-client' {
     }
 
     export class Portal {
+
+        public id : string;
+
         constructor(...args: any[]);
 
         activateEditorProxy(...args: any[]): void;
@@ -482,7 +485,7 @@ declare module '@atom/teletype-client' {
     export class TeletypeClient {
         constructor(...args: any[]);
 
-        createPortal(...args: any[]): void;
+        createPortal(...args: any[]): Promise<Portal>;
 
         dispose(...args: any[]): void;
 
@@ -494,7 +497,7 @@ declare module '@atom/teletype-client' {
 
         isSignedIn(...args: any[]): void;
 
-        joinPortal(...args: any[]): Portal;
+        joinPortal(portalId : string): Portal;
 
         onConnectionError(...args: any[]): void;
 

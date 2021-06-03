@@ -37,6 +37,9 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
             this.peers.unobserve(observer);
         });
     }
+    getType(): string {
+        return "YJS";
+    }
     
     private onPeerEvent(event : Y.YMapEvent<Y.Map<Y.Map<any>>>) {
         for(let changedKey of event.keysChanged) {
