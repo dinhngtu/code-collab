@@ -55,6 +55,11 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     private onPeerAdded(peer : string, files : Y.Map<Y.Map<any>>) {
         console.debug("Adding peer "+peer);
+        
+        this.executeOnListener(async (listener) => {
+            listener.onPeerJoined(peer);
+        });
+
         for(let fileName of files.keys()) {
             this.onFileAdded(peer, fileName, files.get(fileName)!);
         }
@@ -73,6 +78,11 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     private onPeerDeleted(peer : string) {
         console.debug("Deleting peer "+peer);
+
+        this.executeOnListener(async (listener) => {
+            listener.onPeerLeft(peer);
+        });
+
         let peerFiles = this.editorSyncsByPeerAndFile.get(peer);
         if(peerFiles) {
             for(let fileName of peerFiles.keys()) {

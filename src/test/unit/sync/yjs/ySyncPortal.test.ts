@@ -24,6 +24,13 @@ suite("YSyncPortal", function () {
         syncPortal = new YSyncPortal(doc);
         syncPortal.setListener(listener);
     });
+
+    test("Test add and remove peer", () => {
+        doc.getMap("peers").set("1234",new Y.Map<RemoteFile>());
+        verify(listenerClass.onPeerJoined("1234")).once();
+        doc.getMap("peers").delete("1234");
+        verify(listenerClass.onPeerLeft("1234")).once();
+    });
     
     test("Test that the local peer exists", function() {
         assert.ok(doc.getMap("peers").get(syncPortal.localPeer));

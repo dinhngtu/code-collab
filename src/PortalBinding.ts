@@ -10,8 +10,10 @@ import { IEditorSync } from './sync/iEditorSync';
 import { IBufferSync } from './sync/iBufferSync';
 import { MockableApis } from './base/mockableApis';
 import { fileUrl } from './base/functions';
+import { IPortalBindingListener } from './iPortalBindingListener';
+import { DelayedListenerExecution } from './sync/teletype/delayedListenerExecution';
 
-export default class PortalBinding implements IPortalListener{
+export default class PortalBinding  extends DelayedListenerExecution<IPortalBindingListener> implements IPortalListener{
 	private disposed!: boolean;
 	private editorBindingsByEditorSync = new Map<IEditorSync, EditorBinding>();
 	private bufferBindingsByBufferSync = new Map<IBufferSync, BufferBinding>();
@@ -21,11 +23,13 @@ export default class PortalBinding implements IPortalListener{
 	private editorSyncsByEditor = new WeakMap<vscode.TextEditor, IEditorSync>();
 	private editorsBySyncs = new Map<IEditorSync, vscode.TextEditor>();
 	private remoteFiles = new Set<string>();
+	public peers : string[] = [];
 
 
 	constructor(public syncPortal : ISyncPortal, public isHost : boolean, public name : string) {
-
+		super();
 	}
+	
 
 	getName() : string {
 		return this.name;
@@ -53,6 +57,27 @@ export default class PortalBinding implements IPortalListener{
 		if(this.isHost) {
 			this.onDidChangeActiveTextEditor(MockableApis.window.activeTextEditor);
 		}
+	}
+
+	async onPeerJoined(peer: string): Promise<void> {
+		this.peers.push(peer);
+		this.informPeerListeners();
+	}
+
+
+	async onPeerLeft(peer: string): Promise<void> {
+		for(var i = 0;i<this.peers.length;i++) {
+			if(this.peers[i] === peer) {
+				this.peers.splice(i,1);
+			}
+		}
+		this.informPeerListeners();
+	}
+
+	private informPeerListeners() {
+		this.executeOnListener(async (listener) => {
+			listener.onPeerAddedOrRemoved();
+		});
 	}
 
 	private registerWorkspaceEvents () {

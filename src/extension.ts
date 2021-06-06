@@ -6,6 +6,7 @@ import { ConnectionManager } from './connectionManager';
 import { TeletypeConnector } from './view/connector/teletypeConnector';
 import { YJSConnector } from './view/connector/yjsConnector';
 import { MultiConnector } from './view/connector/multiConnector';
+import { PeerFileDecorationProvider } from './view/tree/peerFileDecorationProvider';
 
 let connectionManager = new ConnectionManager();
 
@@ -15,6 +16,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	console.log('Great, your extension "vscode-teletype" is now active!');
 	
+	vscode.window.registerFileDecorationProvider(new PeerFileDecorationProvider());
+
 	let teletypeConnector = new TeletypeConnector(context.workspaceState, connectionManager);
 	let yjsConnector = new YJSConnector(connectionManager);
 	let multiConnector = new MultiConnector(connectionManager, [yjsConnector, teletypeConnector]);

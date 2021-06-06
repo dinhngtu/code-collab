@@ -82,4 +82,14 @@ suite("TeletypeSyncPortal", function () {
         portalSync.updateTether(null,newProxy,null);
         verify(listenerClass.onOpenRemoteFile("/123/abc", editorSync)).twice();
     });
+
+    test("Test join", () => {
+        portalSync.siteDidJoin("1234");
+        verify(listenerClass.onPeerJoined("1234")).once();
+    });
+
+    test("Test left", () => {
+        portalSync.siteDidLeave("1234");
+        verify(listenerClass.onPeerLeft("1234")).once();
+    });
 });

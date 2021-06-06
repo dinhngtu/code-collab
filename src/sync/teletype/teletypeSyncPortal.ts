@@ -82,11 +82,15 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
 	}
 
     siteDidJoin(siteId: any) {
-		//TODO: implement
+		this.executeOnListener(async (listener) => {
+            listener.onPeerJoined(siteId);
+        });
 	}
 
-	siteDidLeave(siteId: never) {
-		//TODO: implement
+	siteDidLeave(siteId: any) {
+		this.executeOnListener(async (listener) => {
+            listener.onPeerLeft(siteId);
+        });
 	}
 
 	didChangeEditorProxies() { 

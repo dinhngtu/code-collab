@@ -46,7 +46,7 @@ export default class EditorBinding implements IEditorListener{
 		return Promise.resolve();
 	}
 
-	updateSelections(selections: vscode.Selection[]) {
+	updateSelections(selections: readonly vscode.Selection[]) {
 		var index = 0;
 		let remoteSelections : Selection[] = [];
 		for(let selection of selections) {

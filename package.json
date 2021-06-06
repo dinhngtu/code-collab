@@ -16,7 +16,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.addCollabConnection", 
+		"onCommand:extension.addCollabConnection",
 		"onView:extension.collaboration"
 	],
 	"main": "./out/extension.js",
@@ -34,36 +34,50 @@
 		"views": {
 			"explorer": [
 				{
-					"id": "extension.collaboration", 
+					"id": "extension.collaboration",
 					"name": "Collaboration"
 				}
 			]
-		}, 
+		},
 		"menus": {
 			"view/item/context": [
 				{
-					"command": "extension.addCollabConnection", 
+					"command": "extension.addCollabConnection",
 					"when": "view == extension.collaboration && viewItem == connections",
 					"group": "inline"
 				}
 			]
-		}
+		},
+		"colors": [
+			{
+				"id": "collab.peer.1",
+				"description": "Color for peer 1",
+				"defaults": {
+					"dark": "#ff0000",
+					"light": "#ff0000",
+					"highContrast": "#ff0000"
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test",
 		"package": "vsce package"
 	},
 	"devDependencies": {
-		"@types/mocha": "^2.2.42",
+		"@types/glob": "^7.1.3",
+		"@types/mocha": "^8.2.2",
 		"@types/node": "^10.17.24",
 		"@types/temp": "^0.9.0",
+		"@types/vscode": "^1.56.0",
 		"awesome-typescript-loader": "^5.2.1",
 		"deep-equal": "^1.1.1",
+		"glob": "^7.1.7",
 		"memfs": "^3.2.2",
+		"mocha": "^4.1.0",
 		"source-map-loader": "^0.2.4",
 		"temp": "^0.9.4",
 		"ts-mockito": "^2.6.1",
@@ -71,7 +85,7 @@
 		"typescript": "^3.9.5",
 		"unionfs": "^4.4.0",
 		"vsce": "~1.71.0",
-		"vscode": "^1.1.37",
+		"vscode-test": "^1.5.2",
 		"webpack": "^4.43.0",
 		"webpack-cli": "^3.3.11"
 	},

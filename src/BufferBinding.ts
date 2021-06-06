@@ -100,7 +100,7 @@ export default class BufferBinding implements IBufferListener {
 		);
 	}
 
-	onDidChangeBuffer(changes: vscode.TextDocumentContentChangeEvent[]) {
+	onDidChangeBuffer(changes: readonly vscode.TextDocumentContentChangeEvent[]) {
 		console.debug("handling changes (disabled="+this.disableLocalUpdates+"): "+JSON.stringify(changes));
 		if(!this.disableLocalUpdates) {
 			for(let change of changes) {
