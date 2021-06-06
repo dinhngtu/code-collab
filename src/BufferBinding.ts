@@ -60,7 +60,7 @@ export default class BufferBinding implements IBufferListener {
 	async onTextChanges(changes: TextChange[]): Promise<void> {
 		for (let i = changes.length - 1; i >= 0; i--) {
 			const textUpdate = changes[i];
-			this.edits.enqueue(async () => { await this.handleEdit(textUpdate)});
+			this.edits.enqueue(async () => { await this.handleEdit(textUpdate);});
 		}
 	}
 	

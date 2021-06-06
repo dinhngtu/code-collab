@@ -11,7 +11,7 @@ export class ConnectionsTreeElement extends vscode.TreeItem implements ICollabor
     iconPath = {
         light: path.join(__filename, '..','..','..', '..',  'resources', 'light', 'connections.svg'),
         dark: path.join(__filename, '..','..','..','..',   'resources', 'dark', 'connections.svg')
-    }
+    };
 
     contextValue = "connections";
 }

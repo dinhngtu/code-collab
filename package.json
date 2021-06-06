@@ -10,7 +10,7 @@
 		"url": "https://github.com/Rijul5/vscode-teletype.git"
 	},
 	"engines": {
-		"vscode": "^1.35.0"
+		"vscode": "^1.56.0"
 	},
 	"categories": [
 		"Other"
@@ -84,7 +84,7 @@
 		"tslint": "^5.20.1",
 		"typescript": "^3.9.5",
 		"unionfs": "^4.4.0",
-		"vsce": "~1.71.0",
+		"vsce": "~1.92.0",
 		"vscode-test": "^1.5.2",
 		"webpack": "^4.43.0",
 		"webpack-cli": "^3.3.11"

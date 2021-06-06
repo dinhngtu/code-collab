@@ -187,6 +187,8 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 
 	dispose() {
 		this.disposed = true;
+		
+		this.syncPortal.close();
 	}
 
 	isDisposed() {
