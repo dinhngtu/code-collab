@@ -11,7 +11,7 @@ export class PeerTreeElement extends vscode.TreeItem implements ICollaborationTr
     iconPath = {
         light: path.join(__filename, '..','..','..','..',   'resources', 'light', 'peer.svg'),
         dark: path.join(__filename, '..','..','..','..',  'resources', 'dark', 'peer.svg')
-    }
+    };
 
     contextValue = "peer";
 }
