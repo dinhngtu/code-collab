@@ -1,13 +1,13 @@
-import * as vscode from 'vscode'
-import { MockableApis } from '../../base/mockableApis'
+import * as vscode from 'vscode';
+import { IColorManager } from '../../color/iColorManager';
 import { ConnectionManager } from '../../connectionManager';
 import { BaseConnector } from './baseConnector';
 import { IConnector } from './iConnector';
 
 export class MultiConnector extends BaseConnector implements IConnector{
 
-    constructor(connectionManager : ConnectionManager, public connectors : IConnector[]) {
-        super(connectionManager);
+    constructor(connectionManager : ConnectionManager, colorManager : IColorManager, public connectors : IConnector[]) {
+        super(connectionManager, colorManager);
     }
 
     getName(): string {

@@ -50,12 +50,48 @@
 		},
 		"colors": [
 			{
-				"id": "collab.peer.1",
+				"id": "collab.peer.0",
 				"description": "Color for peer 1",
 				"defaults": {
 					"dark": "#ff0000",
 					"light": "#ff0000",
 					"highContrast": "#ff0000"
+				}
+			}, 
+			{
+				"id": "collab.peer.1",
+				"description": "Color for peer 2",
+				"defaults": {
+					"dark": "#00ff00",
+					"light": "#00ff00",
+					"highContrast": "#00ff00"
+				}
+			}, 
+			{
+				"id": "collab.peer.2",
+				"description": "Color for peer 3",
+				"defaults": {
+					"dark": "#0000ff",
+					"light": "#0000ff",
+					"highContrast": "#0000ff"
+				}
+			},
+			{
+				"id": "collab.peer.3",
+				"description": "Color for peer 4",
+				"defaults": {
+					"dark": "#ffff00",
+					"light": "#ffff00",
+					"highContrast": "#ffff00"
+				}
+			}, 
+			{
+				"id": "collab.peer.4",
+				"description": "Color for peer 5",
+				"defaults": {
+					"dark": "#00ffff",
+					"light": "#00ffff",
+					"highContrast": "#00ffff"
 				}
 			}
 		]

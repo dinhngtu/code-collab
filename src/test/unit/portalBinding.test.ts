@@ -14,6 +14,7 @@ import * as path from 'path';
 import { fileUrl } from '../../base/functions';
 import { MemorySyncPortal } from '../../sync/memory/memorySyncPortal';
 import { MockWrapper } from './mockWrapper';
+import { ColorManager } from '../../color/colorManager';
 
 
 suite("PortalBinding", function () {
@@ -133,7 +134,7 @@ async function openRemoteFile(portalBinding: PortalBinding) {
 }
 
 async function createAndInitPortalBinding(syncPortal: MemorySyncPortal, isHost : boolean) : Promise<PortalBinding> {
-    let portalBinding = new PortalBinding(syncPortal, isHost, "test");
+    let portalBinding = new PortalBinding(syncPortal, isHost, "test", new ColorManager());
     await portalBinding.initialize();
     assert.strictEqual(syncPortal.localFiles.length, isHost ? 1: 0);
     assertBindings(syncPortal);

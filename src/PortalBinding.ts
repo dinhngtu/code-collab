@@ -12,6 +12,7 @@ import { MockableApis } from './base/mockableApis';
 import { fileUrl } from './base/functions';
 import { IPortalBindingListener } from './iPortalBindingListener';
 import { DelayedListenerExecution } from './sync/teletype/delayedListenerExecution';
+import { IColorManager } from './color/iColorManager';
 
 export default class PortalBinding  extends DelayedListenerExecution<IPortalBindingListener> implements IPortalListener{
 	private disposed!: boolean;
@@ -26,7 +27,7 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 	public peers : string[] = [];
 
 
-	constructor(public syncPortal : ISyncPortal, public isHost : boolean, public name : string) {
+	constructor(public syncPortal : ISyncPortal, public isHost : boolean, public name : string, private colorManager : IColorManager) {
 		super();
 	}
 	
@@ -222,7 +223,7 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 	}
 
 	private registerNewBindingForEditorAndSync(editor: vscode.TextEditor, editorSync: IEditorSync) {
-		let editorBinding = new EditorBinding(editor, editorSync);
+		let editorBinding = new EditorBinding(editor, editorSync, this.colorManager);
 		this.editorBindingsByEditorSync.set(editorSync, editorBinding);
 		this.editorSyncsByEditor.set(editor, editorSync);
 		this.editorBindingsByEditor.set(editor, editorBinding);

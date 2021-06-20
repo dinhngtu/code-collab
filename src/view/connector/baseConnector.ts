@@ -1,14 +1,15 @@
+import { IColorManager } from "../../color/iColorManager";
 import { ConnectionManager } from "../../connectionManager";
 import PortalBinding from "../../PortalBinding";
 import { ISyncPortal } from "../../sync/iSyncPortal";
 
 export abstract class BaseConnector {
-    constructor(public connectionManager : ConnectionManager) {
+    constructor(public connectionManager : ConnectionManager, private colorManager : IColorManager) {
 
     }
 
     protected addConnection(name : string, syncPortal : ISyncPortal, host : boolean) {
-        let binding = new PortalBinding(syncPortal, host,name);
+        let binding = new PortalBinding(syncPortal, host,name, this.colorManager);
         binding.initialize();
         this.connectionManager.addConnection(binding);
     }

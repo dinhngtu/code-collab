@@ -5,6 +5,7 @@ import { ConnectionManager } from "../../connectionManager";
 import { Portal, TeletypeClient } from "@atom/teletype-client";
 import { TeletypeSyncPortal } from "../../sync/teletype/teletypeSyncPortal";
 import { fakeWindow } from "../../base/functions";
+import { IColorManager } from "../../color/iColorManager";
 
 export class TeletypeConnection {
     public url = 'https://api.teletype.atom.io';
@@ -16,8 +17,8 @@ export class TeletypeConnection {
 
 export class TeletypeConnector extends BaseConnector implements IConnector {
 
-    constructor(public storage : vscode.Memento, connectionManager : ConnectionManager) {
-        super(connectionManager);
+    constructor(public storage : vscode.Memento, connectionManager : ConnectionManager, colorManager : IColorManager) {
+        super(connectionManager, colorManager);
     }
 
     async newConnection(): Promise<void> {

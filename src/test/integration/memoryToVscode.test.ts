@@ -11,12 +11,14 @@ import * as temp from 'temp';
 import { fileUrl, sleep } from '../../base/functions';
 import { IBufferListener } from '../../sync/iBufferListener';
 import * as fs from 'fs';
+import { ColorManager } from '../../color/colorManager';
 
 suite("MemoryToVscodeTest", function () {
 
     let syncPortal = new MemorySyncPortal();
 
-    let portalBinding = new PortalBinding(syncPortal, true, "test");
+    let colorManager = new ColorManager();
+    let portalBinding = new PortalBinding(syncPortal, true, "test", colorManager);
 
     suiteSetup(async () => {
         MockableApis.restore();
