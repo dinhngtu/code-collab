@@ -17,13 +17,14 @@ suite("TeletypeSyncPortal", function () {
     let portal = instance(portalClass);
     let bufferProxy = instance(bufferProxyClass);
     let listener = instance(listenerClass);
+    when(portalClass.getSiteIdentity(1234)).thenReturn({login: "1234"});
     when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything())).thenReturn(Promise.resolve());
     when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
 
     let editorProxy = instance(editorProxyClass);
     (editorProxy as any).bufferProxy = bufferProxy;
 
-    when(portalClass.createBufferProxy(anyString())).thenReturn(bufferProxy);
+    when(portalClass.createBufferProxy(anything())).thenReturn(bufferProxy);
     when(portalClass.createEditorProxy(anything())).thenReturn(editorProxy);
 
     let portalSync = new TeletypeSyncPortal(portal);
@@ -34,7 +35,7 @@ suite("TeletypeSyncPortal", function () {
     });
 
     test("Test syncFileToLocal", function() {
-        verify(portalClass.createBufferProxy({uri: "test.txt"})).once();
+        verify(portalClass.createBufferProxy(deepEqual({uri: "test.txt"}))).once();
         verify(portalClass.createEditorProxy(deepEqual({bufferProxy}))).once();
     });
 
@@ -75,30 +76,29 @@ suite("TeletypeSyncPortal", function () {
         (newProxy as any).bufferProxy = {
             uri: "abc"
         };
-        (newProxy as any).siteId = "peer";
         (portal as any).id = "123";
         var editorSync : IEditorSync | null = null;
-        when(listenerClass.onOpenRemoteFile(strictEqual("peer"),strictEqual("/123/abc"), anything())).thenCall((peer: string, url: string, sync : IEditorSync) => {
+        when(listenerClass.onOpenRemoteFile(strictEqual("host"),strictEqual("/123/abc"), anything())).thenCall((peer: string, url: string, sync : IEditorSync) => {
             editorSync = sync;
         });
         portalSync.updateTether(null,newProxy,null);
         await sleep(20);
         assert.ok(editorSync);
-        verify(listenerClass.onOpenRemoteFile("peer","/123/abc", editorSync)).once();
+        verify(listenerClass.onOpenRemoteFile("host","/123/abc", editorSync)).once();
         verify(listenerClass.onActivateRemoveFile(editorSync)).once();
         portalSync.updateTether(null,newProxy,null);
         await sleep(20);
-        verify(listenerClass.onOpenRemoteFile("peer","/123/abc", editorSync)).twice();
+        verify(listenerClass.onOpenRemoteFile("host","/123/abc", editorSync)).twice();
         verify(listenerClass.onActivateRemoveFile(editorSync)).twice();
     });
 
     test("Test join", () => {
-        portalSync.siteDidJoin("1234");
+        portalSync.siteDidJoin(1234);
         verify(listenerClass.onPeerJoined("1234")).once();
     });
 
     test("Test left", () => {
-        portalSync.siteDidLeave("1234");
+        portalSync.siteDidLeave(1234);
         verify(listenerClass.onPeerLeft("1234")).once();
     });
 });

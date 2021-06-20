@@ -1,5 +1,5 @@
 import { BufferProxy, EditorProxy, Portal } from '@atom/teletype-client';
-import {deepEqual, instance, mock, verify} from 'ts-mockito';
+import {deepEqual, instance, mock, verify, when} from 'ts-mockito';
 import { Position } from '../../../../sync/data/position';
 import { Selection } from '../../../../sync/data/selection';
 import { IEditorListener } from '../../../../sync/iEditorListener';
@@ -20,6 +20,8 @@ suite("TeletypeEditorSync", function () {
     let editorProxy = instance(editorProxyClass);
     let portal = instance(portalClass);
     let portalSync = instance(portalSyncClass);
+
+    when(portalClass.getSiteIdentity(123)).thenReturn({login: "123"});
 
     (editorProxy as any).bufferProxy = bufferProxy;
 
