@@ -1,17 +1,17 @@
-import {anything, instance, mock, strictEqual, verify} from 'ts-mockito';
+import {anyString, anything, instance, mock, strictEqual, verify, when} from 'ts-mockito';
 import * as Y from 'yjs';
 import { RemoteFile } from '../../../../sync/yjs/remoteFile';
 import { RemoteSelection } from '../../../../sync/yjs/remoteSelection';
 import * as assert from 'assert';
 import { IPortalListener } from '../../../../sync/iPortalListener';
 import { YSyncPortal } from '../../../../sync/yjs/ySyncPortal';
+import { sleep } from '../../../../base/functions';
 
 suite("YSyncPortal", function () {
 
     var listenerClass = mock<IPortalListener>();
 
     var listener = instance(listenerClass);
-
     var doc = new Y.Doc();
     var syncPortal = new YSyncPortal(doc);
     syncPortal.setListener(listener);
@@ -19,6 +19,8 @@ suite("YSyncPortal", function () {
     setup(() => {
         listenerClass = mock<IPortalListener>();
         listener = instance(listenerClass);
+        when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything())).thenReturn(Promise.resolve());
+        when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
         syncPortal.close();
         doc = new Y.Doc();
         syncPortal = new YSyncPortal(doc);
@@ -36,17 +38,21 @@ suite("YSyncPortal", function () {
         assert.ok(doc.getMap("peers").get(syncPortal.localPeer));
     });
 
-    test("Test syncFileToLocal", function() {
+    test("Test syncFileToLocal", async function() {
         doc.getMap("peers").get(syncPortal.localPeer)!.set("test.txt",new RemoteFile("234", "test.txt",new Y.Array<RemoteSelection>(), new Y.Text(), true, new Y.Array<string>()));
-        verify(listenerClass.onOpenRemoteFile(strictEqual("test.txt"), anything())).once();
+        await sleep(20);
+        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything())).once();
+        verify(listenerClass.onActivateRemoveFile(anything())).once();
+    
     });
 
     test("Test activateFileToLocal", function() {
         let file = new RemoteFile("234", "test.txt",new Y.Array<RemoteSelection>(), new Y.Text(), false, new Y.Array<string>());
         doc.getMap("peers").get(syncPortal.localPeer)!.set("test.txt",file);
-        verify(listenerClass.onOpenRemoteFile(strictEqual("test.txt"), anything())).never();
+        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything())).once();
+        verify(listenerClass.onActivateRemoveFile(anything())).never();
         file.isActive = true;
-        verify(listenerClass.onOpenRemoteFile(strictEqual("test.txt"), anything())).once();
+        verify(listenerClass.onActivateRemoveFile(anything())).once();
     });
 
 

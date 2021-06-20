@@ -35,7 +35,8 @@ suite("MemoryToVscodeTest", function () {
 
     test("test open remote file and edit", async () => {
         let editorSync = new MemoryEditorSync();
-        await syncPortal.listener?.onOpenRemoteFile("test.txt", editorSync);
+        await syncPortal.listener?.onOpenRemoteFile("peer","test.txt", editorSync);
+        await syncPortal.listener?.onActivateRemoveFile(editorSync);
         let activeEditor = vscode.window.activeTextEditor;
         let bufferSync = (editorSync.getBufferSync() as MemoryBufferSync);
         let bufferListener =  bufferSync.listener!;
@@ -76,7 +77,8 @@ suite("MemoryToVscodeTest", function () {
 
     test("Test open remote file and send many changes", async () => {
         let editorSync = new MemoryEditorSync();
-        await syncPortal.listener?.onOpenRemoteFile("test.txt", editorSync);
+        await syncPortal.listener?.onOpenRemoteFile("peer","test.txt", editorSync);
+        await syncPortal.listener?.onActivateRemoveFile(editorSync);
         let activeEditor = vscode.window.activeTextEditor;
         let bufferSync = (editorSync.getBufferSync() as MemoryBufferSync);
         let bufferListener =  bufferSync.listener!;

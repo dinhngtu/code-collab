@@ -1,10 +1,11 @@
 import { ICollaborationTreeElement } from "./iCollaborationTreeElement";
 import * as vscode from 'vscode';
 import * as path from 'path';
+import PortalBinding from "../../PortalBinding";
 
 export class PeerTreeElement extends vscode.TreeItem implements ICollaborationTreeElement {
-    constructor(private peer : string) {
-        super(peer);
+    constructor(public connection : PortalBinding, public peer : string) {
+        super(peer, connection.getFiles(peer).length === 0?vscode.TreeItemCollapsibleState.None:vscode.TreeItemCollapsibleState.Expanded);
         this.resourceUri=vscode.Uri.parse("collab-peer://"+peer);
     }
 

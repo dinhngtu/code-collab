@@ -7,6 +7,7 @@ import { ConnectionsTreeElement } from './connectionsTreeElement';
 import { ConnectionTreeElement } from './connectionTreeElement';
 import { PeerTreeElement } from './peerTreeElement';
 import { IPortalBindingListener } from '../../iPortalBindingListener';
+import { FileTreeElement } from './fileTreeElement';
 
 export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<ICollaborationTreeElement>, IConnectionManagerListener, IPortalBindingListener {
 
@@ -17,6 +18,10 @@ export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<IC
     }
 
     onPeerAddedOrRemoved(): void {
+        this._onDidChangeTreeData.fire(undefined);
+    }
+
+    onFileAddedOrRemoved() : void {
         this._onDidChangeTreeData.fire(undefined);
     }
 
@@ -44,9 +49,16 @@ export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<IC
                 let portal = connection.binding;
                 let peers : PeerTreeElement[] = [];
                 for(let peer of portal.peers) {
-                    peers.push(new PeerTreeElement(peer));
+                    peers.push(new PeerTreeElement(connection.binding, peer));
                 }
                 return Promise.resolve(peers);
+            } else if(element instanceof PeerTreeElement) {
+                let peer = element as PeerTreeElement;
+                let files : FileTreeElement[] = [];
+                for(let file of peer.connection.getFiles(peer.peer)) {
+                    files.push(new FileTreeElement(file));
+                }
+                return files;
             }
             return Promise.resolve([]);
         } else {

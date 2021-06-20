@@ -15,7 +15,7 @@ export default class BufferBinding implements IBufferListener {
 	public disableLocalUpdates = false;
 	public edits = new Queue<EditCallback>();
 
-	constructor(public buffer : vscode.TextDocument, public bufferSync : IBufferSync) {
+	constructor(public buffer : vscode.TextDocument, public bufferSync : IBufferSync, public fileName : string) {
 		bufferSync.setListener(this);
 		MockableApis.executor.executeCyclic(this.editPoller.bind(this), 100);
 	}

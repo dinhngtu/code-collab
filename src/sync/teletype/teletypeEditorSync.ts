@@ -1,17 +1,19 @@
 import { Selection } from "../data/selection";
 import { IEditorListener } from "../iEditorListener";
 import { IEditorSync } from "../iEditorSync";
-import { EditorProxy } from '@atom/teletype-client';
+import { EditorProxy, Portal } from '@atom/teletype-client';
 import { SelectionMap, Selection as TeletypeSelection, Range } from './types/teletype_types';
 import { IBufferSync } from "../iBufferSync";
 import { TeletypeBufferSync } from "./teletypeBufferSync";
 import { DelayedListenerExecution } from "./delayedListenerExecution";
+import { TeletypeSyncPortal } from "./teletypeSyncPortal";
 
 export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener> implements IEditorSync{
 
+    private disposed : boolean = false;
     private bufferSync : IBufferSync;
 
-    constructor(public editorProxy : EditorProxy) {
+    constructor(public portal : Portal, public editorProxy : EditorProxy, public parent : TeletypeSyncPortal) {
         super();
         this.editorProxy.setDelegate(this);
         this.bufferSync = new TeletypeBufferSync((this.editorProxy as any).bufferProxy);
@@ -47,9 +49,13 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
 	}
 
     dispose() {
-        this.executeOnListener(async (listener) => {
-            listener.dispose();
-        });
+        if(!this.disposed) {
+            this.disposed = true;
+            this.parent.onRemoteFileClosed(this);
+            this.executeOnListener(async (listener) => {
+                listener.dispose();
+            });
+        }
 	}
 
     updateSelectionsForSiteId(siteId: number, selectionUpdates: SelectionMap) {
@@ -65,13 +71,13 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
             }
         }
         this.executeOnListener(async (listener) => {
-            listener.onSelectionsChangedForPeer(""+siteId, selections);
+            listener.onSelectionsChangedForPeer(this.getSiteId(siteId), selections);
         });
 	}
 
     clearSelectionsForSiteId(siteId: number) {
         this.executeOnListener(async (listener) => {
-            listener.onSelectionsChangedForPeer(""+siteId, []);
+            listener.onSelectionsChangedForPeer(this.getSiteId(siteId), []);
         });
     }
     
@@ -94,5 +100,13 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
 			};
 		}
 	}
+
+    private getSiteId(siteId : number) : string {
+        if(siteId === 1) {
+            return "host";
+        } else {
+            return this.portal.getSiteIdentity(siteId).login;
+        }
+    }
 
 }

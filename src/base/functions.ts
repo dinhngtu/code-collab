@@ -29,3 +29,10 @@ export function fakeWindow() {
 export function unfakeWindow() {
 	globalAny.window = undefined;
 }
+
+export function removeValueFromArray<T>(array : T[], value : T) {
+    let index = array.indexOf(value);
+    if(index>=0) {
+        array.splice(index);
+    }
+}

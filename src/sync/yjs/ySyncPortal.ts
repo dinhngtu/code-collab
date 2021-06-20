@@ -43,12 +43,16 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     
     private onPeerEvent(event : Y.YMapEvent<Y.Map<Y.Map<any>>>) {
         for(let changedKey of event.keysChanged) {
-            let change = event.changes.keys.get(changedKey)!;
-            console.debug("Processing "+change.action+" for peer "+changedKey);
-            if(change.action === "add") {
-                this.onPeerAdded(changedKey, this.peers.get(changedKey)!);
-            } else if(change.action === "delete") {
-                this.onPeerDeleted(changedKey);
+            let change = event.changes.keys.get(changedKey);
+            if(change) {
+                console.debug("Processing "+change.action+" for peer "+changedKey);
+                if(change.action === "add") {
+                    this.onPeerAdded(changedKey, this.peers.get(changedKey)!);
+                } else if(change.action === "delete") {
+                    this.onPeerDeleted(changedKey);
+                }
+            } else {
+                console.warn("Unable to find change for changed key "+changedKey);
             }
         }
     }
@@ -109,6 +113,9 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         let remoteFile = new RemoteFileProxy(file);
         console.debug("Adding remote file "+key+"@"+peer+"(active="+remoteFile.isActive+")");
         this.addObserverOnFile(peer, key, file);
+        await this.executeOnListener(async (listener) => {
+            await listener.onOpenRemoteFile(peer, remoteFile.uri, this.getEditorSync(peer, key, remoteFile));
+        });
         if (remoteFile.isActive) {
             await this.activateRemoteFile(peer, key, remoteFile);
         }
@@ -148,7 +155,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     private async activateRemoteFile(peer : string, key : string, targetFile: IRemoteFile) {
         await this.executeOnListener(async (listener) => {
-            await listener.onOpenRemoteFile(targetFile.uri, this.getEditorSync(peer, key, targetFile));
+            await listener.onActivateRemoveFile(this.getEditorSync(peer, key, targetFile));
         });
     }
 

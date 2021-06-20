@@ -12,6 +12,11 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     constructor(public portal : Portal) {
         super();
         this.portal.setDelegate(this);
+        if(!portal.isHost) {
+            this.executeOnListener(async (listener) => {
+                listener.onPeerJoined("host");
+            });
+        }
     }
     getType(): string {
         return "Teletype";
@@ -19,6 +24,14 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
 
     async closeFileToRemote(editorSync: IEditorSync): Promise<void> {
         editorSync.close();
+    }
+
+    onRemoteFileClosed(sync: TeletypeEditorSync) {
+        if(!this.portal.isHost) {
+            this.executeOnListener(async (listener) => {
+                await listener.onCloseRemoteFile(sync);
+            })    
+        }
     }
     
     close(): void {
@@ -29,9 +42,9 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     }
 
     syncLocalFileToRemote(fileid: string): Promise<IEditorSync> {
-        let bufferProxy = this.portal.createBufferProxy();
+        let bufferProxy = this.portal.createBufferProxy({uri: fileid});
 		let editorProxy = this.portal.createEditorProxy({bufferProxy});
-        let editorSync = new TeletypeEditorSync(editorProxy);
+        let editorSync = new TeletypeEditorSync(this.portal, editorProxy,this);
         this.syncsByProxy.set(editorProxy, editorSync);
         return Promise.resolve(editorSync);
     }
@@ -48,18 +61,20 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
         });
     }
 
-    async updateTether(state: any, editorProxy: any, position: any) {
+    async updateTether(state: any, editorProxy: EditorProxy | null, position: any) {
 		if (editorProxy) {
             let uniquePath = this.getUniquePath(editorProxy);
             if(this.syncsByProxy.has(editorProxy)) {
                 this.executeOnListener(async (listener) => {
-                    listener.onOpenRemoteFile(uniquePath, this.syncsByProxy.get(editorProxy)!);
+                    await listener.onOpenRemoteFile("host", uniquePath, this.syncsByProxy.get(editorProxy)!);
+                    await listener.onActivateRemoveFile(this.syncsByProxy.get(editorProxy)!);
                 });
             } else {
-                let editorSync = new TeletypeEditorSync(editorProxy);
+                let editorSync = new TeletypeEditorSync(this.portal,editorProxy,this);
                 this.syncsByProxy.set(editorProxy, editorSync);
                 this.executeOnListener(async (listener) => {
-                    listener.onOpenRemoteFile(uniquePath,editorSync);
+                    await listener.onOpenRemoteFile("host", uniquePath,editorSync);
+                    await listener.onActivateRemoveFile(editorSync);
                 });
             }
 		}
@@ -70,11 +85,13 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     }
 
     hostDidClosePortal() {
-		//TODO: implement
+        this.executeOnListener(async (listener) => {
+            listener.onPeerLeft("host");
+        });
 	}
 
     hostDidLoseConnection() {
-		//TODO: implement
+        this.hostDidClosePortal();
 	}
 
     updateActivePositions(positionsBySiteId: any) {
@@ -83,13 +100,13 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
 
     siteDidJoin(siteId: any) {
 		this.executeOnListener(async (listener) => {
-            listener.onPeerJoined(siteId);
+            listener.onPeerJoined(this.portal.getSiteIdentity(siteId).login);
         });
 	}
 
 	siteDidLeave(siteId: any) {
 		this.executeOnListener(async (listener) => {
-            listener.onPeerLeft(siteId);
+            listener.onPeerLeft(this.portal.getSiteIdentity(siteId).login);
         });
 	}
 

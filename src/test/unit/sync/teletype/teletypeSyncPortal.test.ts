@@ -5,6 +5,7 @@ import { IPortalListener } from '../../../../sync/iPortalListener';
 import { TeletypeEditorSync } from '../../../../sync/teletype/teletypeEditorSync';
 import { TeletypeSyncPortal } from '../../../../sync/teletype/teletypeSyncPortal';
 import * as assert from 'assert';
+import { sleep } from '../../../../base/functions';
 
 suite("TeletypeSyncPortal", function () {
 
@@ -16,21 +17,24 @@ suite("TeletypeSyncPortal", function () {
     let portal = instance(portalClass);
     let bufferProxy = instance(bufferProxyClass);
     let listener = instance(listenerClass);
+    when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything())).thenReturn(Promise.resolve());
+    when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
+
     let editorProxy = instance(editorProxyClass);
     (editorProxy as any).bufferProxy = bufferProxy;
 
-    when(portalClass.createBufferProxy()).thenReturn(bufferProxy);
+    when(portalClass.createBufferProxy(anyString())).thenReturn(bufferProxy);
     when(portalClass.createEditorProxy(anything())).thenReturn(editorProxy);
 
     let portalSync = new TeletypeSyncPortal(portal);
     portalSync.setListener(listener);
 
     suiteSetup(async function() {
-        await portalSync.syncLocalFileToRemote("doesnt matter");
+        await portalSync.syncLocalFileToRemote("test.txt");
     });
 
     test("Test syncFileToLocal", function() {
-        verify(portalClass.createBufferProxy()).once();
+        verify(portalClass.createBufferProxy({uri: "test.txt"})).once();
         verify(portalClass.createEditorProxy(deepEqual({bufferProxy}))).once();
     });
 
@@ -42,7 +46,7 @@ suite("TeletypeSyncPortal", function () {
     });
 
     test("Test activateFileToRemote", async function() {
-        let editorSync = new TeletypeEditorSync(editorProxy);
+        let editorSync = new TeletypeEditorSync(portal, editorProxy, portalSync);
         await portalSync.activateFileToRemote(editorSync);
         verify(portalClass.activateEditorProxy(editorProxy)).once();
     });
@@ -62,25 +66,30 @@ suite("TeletypeSyncPortal", function () {
 
     test("Test empty tether", function() {
         portalSync.updateTether(null,null,null);
-        verify(listenerClass.onOpenRemoteFile(anyString(), anything())).never();
+        verify(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything())).never();
     });
 
     
-    test("Test tether with new and existing proxy", function() {
+    test("Test tether with new and existing proxy", async function() {
         let newProxy = instance(editorProxyClass);
         (newProxy as any).bufferProxy = {
             uri: "abc"
         };
+        (newProxy as any).siteId = "peer";
         (portal as any).id = "123";
         var editorSync : IEditorSync | null = null;
-        when(listenerClass.onOpenRemoteFile("/123/abc", anything())).thenCall((url: string, sync : IEditorSync) => {
+        when(listenerClass.onOpenRemoteFile(strictEqual("peer"),strictEqual("/123/abc"), anything())).thenCall((peer: string, url: string, sync : IEditorSync) => {
             editorSync = sync;
         });
         portalSync.updateTether(null,newProxy,null);
+        await sleep(20);
         assert.ok(editorSync);
-        verify(listenerClass.onOpenRemoteFile("/123/abc", editorSync)).once();
+        verify(listenerClass.onOpenRemoteFile("peer","/123/abc", editorSync)).once();
+        verify(listenerClass.onActivateRemoveFile(editorSync)).once();
         portalSync.updateTether(null,newProxy,null);
-        verify(listenerClass.onOpenRemoteFile("/123/abc", editorSync)).twice();
+        await sleep(20);
+        verify(listenerClass.onOpenRemoteFile("peer","/123/abc", editorSync)).twice();
+        verify(listenerClass.onActivateRemoveFile(editorSync)).twice();
     });
 
     test("Test join", () => {

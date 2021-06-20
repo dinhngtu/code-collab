@@ -24,7 +24,7 @@ suite("BufferBinding", function () {
     let bufferSync = instance(bufferSyncClass);
     let buffer = instance(bufferClass);
 
-    var bufferBinding = new BufferBinding(buffer, bufferSync);
+    var bufferBinding = new BufferBinding(buffer, bufferSync, "test.txt");
     suiteSetup(() => {
         MockableApis.executor = executor;
         MockableApis.fs = vol;
@@ -35,7 +35,7 @@ suite("BufferBinding", function () {
 
 
     test("test set text", async function() {
-        bufferBinding = new BufferBinding(buffer, bufferSync);
+        bufferBinding = new BufferBinding(buffer, bufferSync, "test.txt");
         let memoryEditor = createEditor(bufferBinding, true);
         await bufferBinding.onSetText("abc");
         await executor.cycle(100);
@@ -43,7 +43,7 @@ suite("BufferBinding", function () {
     });
 
     test("test handle remote updates in inactive editor", async function() {
-        bufferBinding = new BufferBinding(buffer, bufferSync);
+        bufferBinding = new BufferBinding(buffer, bufferSync, "test.txt");
         let insert = new TextChange(TextChangeType.INSERT, new Position(0,0), new Position(0,0), "Hallo Welt!");
         let update = new TextChange(TextChangeType.UPDATE, new Position(0,1), new Position(0,2), "e");
         let del = new TextChange(TextChangeType.DELETE, new Position(0,10), new Position(0,10), "");
@@ -52,7 +52,7 @@ suite("BufferBinding", function () {
     });
 
     test("test handle remote updates", async function() {
-        bufferBinding = new BufferBinding(buffer, bufferSync);
+        bufferBinding = new BufferBinding(buffer, bufferSync, "test.txt");
         let insert = new TextChange(TextChangeType.INSERT, new Position(0,0), new Position(0,0), "Hallo Welt!");
         let update = new TextChange(TextChangeType.UPDATE, new Position(0,1), new Position(0,2), "e");
         let del = new TextChange(TextChangeType.DELETE, new Position(0,10), new Position(0,10), "");
@@ -66,7 +66,7 @@ suite("BufferBinding", function () {
     }); 
 
     test("test handle local updates", async function() {
-        bufferBinding = new BufferBinding(buffer, bufferSync);
+        bufferBinding = new BufferBinding(buffer, bufferSync, "test.txt");
         let insert = new TextChange(TextChangeType.INSERT, new Position(0,0), new Position(0,0), "Hallo Welt!");
         await performChanges(bufferBinding, [insert], executor, true);
         let insertChange = { range: new vscode.Range(new vscode.Position(0,0), new vscode.Position(0,0)), text: "Hallo Welt!", rangeOffset:0, rangeLength:0 };

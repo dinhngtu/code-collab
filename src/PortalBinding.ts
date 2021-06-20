@@ -9,7 +9,7 @@ import { IPortalListener } from './sync/iPortalListener';
 import { IEditorSync } from './sync/iEditorSync';
 import { IBufferSync } from './sync/iBufferSync';
 import { MockableApis } from './base/mockableApis';
-import { fileUrl } from './base/functions';
+import { fileUrl, removeValueFromArray } from './base/functions';
 import { IPortalBindingListener } from './iPortalBindingListener';
 import { DelayedListenerExecution } from './sync/teletype/delayedListenerExecution';
 import { IColorManager } from './color/iColorManager';
@@ -24,11 +24,17 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 	private editorSyncsByEditor = new WeakMap<vscode.TextEditor, IEditorSync>();
 	private editorsBySyncs = new Map<IEditorSync, vscode.TextEditor>();
 	private remoteFiles = new Set<string>();
+	private filesByPeer = new Map<string, BufferBinding[]>();
+	private peersByFile = new Map<BufferBinding, string>();
 	public peers : string[] = [];
 
 
 	constructor(public syncPortal : ISyncPortal, public isHost : boolean, public name : string, private colorManager : IColorManager) {
 		super();
+	}
+
+	async onActivateRemoveFile(editorSync: IEditorSync): Promise<void> {
+		await this.findOrCreateEditorByEditorSync(editorSync);
 	}
 	
 
@@ -40,16 +46,48 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 		return this.syncPortal.getType();
 	}
 
+	getFiles(peer : string) : BufferBinding[] {
+		if(this.filesByPeer.has(peer)) {
+			return this.filesByPeer.get(peer)!;
+		}
+		return [];
+	}
+
 	async onCloseRemoteFile(editorSync: IEditorSync): Promise<void> {
+		await this.closeOpenEditors(editorSync);
+
+		this.removeFile(editorSync);
+	}
+
+	private async closeOpenEditors(editorSync: IEditorSync) {
 		let editor = this.editorsBySyncs.get(editorSync);
-		if(editor) {
+		if (editor) {
 			await MockableApis.window.showTextDocument(editor.document);
-            MockableApis.commands.executeCommand('workbench.action.closeActiveEditor');
+			MockableApis.commands.executeCommand('workbench.action.closeActiveEditor');
 		}
 	}
 
-	async onOpenRemoteFile(uniqueUri: string, editorSync: IEditorSync): Promise<void> {
-		await this.findOrCreateEditorByEditorSync(uniqueUri, editorSync);
+	private removeFile(editorSync: IEditorSync) {
+		let bufferSync = editorSync.getBufferSync();
+		const bufferBinding = this.bufferBindingsByBufferSync.get(bufferSync);
+		if (bufferBinding && this.peersByFile.has(bufferBinding)) {
+			removeValueFromArray(this.filesByPeer.get(this.peersByFile.get(bufferBinding)!)!, bufferBinding);
+			this.peersByFile.delete(bufferBinding);
+			this.informFileListeners();
+		}
+	}
+
+	async onOpenRemoteFile(peer : string, uniqueUri: string, editorSync: IEditorSync): Promise<void> {
+		let bufferSync = editorSync.getBufferSync();
+		const binding = await this.findOrCreateBufferForBufferSync(bufferSync, uniqueUri);
+		
+		if(!this.filesByPeer.has(peer)) {
+			this.filesByPeer.set(peer,[]);
+		}
+		this.filesByPeer.get(peer)?.push(binding);
+		this.peersByFile.set(binding, peer);
+
+		this.informFileListeners();
 	}
 
 	async initialize() {
@@ -73,6 +111,12 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 			}
 		}
 		this.informPeerListeners();
+	}
+
+	private informFileListeners() {
+		this.executeOnListener(async (listener) => {
+			listener.onFileAddedOrRemoved();
+		});
 	}
 
 	private informPeerListeners() {
@@ -163,7 +207,7 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 
 	private async createAndRegisterEditorSyncForLocalEditor(editorSync: IEditorSync | undefined, event: vscode.TextEditor) {
 		editorSync = await this.syncPortal.syncLocalFileToRemote(event.document.fileName);
-		this.registerNewBindingForBufferAndSync(event.document, editorSync.getBufferSync());
+		this.registerNewBindingForBufferAndSync(event.document, editorSync.getBufferSync(), event.document.fileName);
 		let bufferBinding = this.bufferBindingsByBufferSync.get( editorSync.getBufferSync());
 		bufferBinding!.editor = event,
 		this.registerNewBindingForEditorAndSync(event, editorSync);
@@ -172,12 +216,12 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 
 	private saveDocument (event : vscode.TextDocumentWillSaveEvent) {
 		if(this.bufferBindingsByBuffer){
-		const bufferBinding = this.bufferBindingsByBuffer.get(event.document);
-		if (bufferBinding) {
-			event.waitUntil(bufferBinding.requestSavePromise());
+			const bufferBinding = this.bufferBindingsByBuffer.get(event.document);
+			if (bufferBinding) {
+				event.waitUntil(bufferBinding.requestSavePromise());
+			}
 		}
 	}
-}
 
 	private triggerSelectionChanges(event : vscode.TextEditorSelectionChangeEvent) {
 		const editorBinding = this.editorBindingsByEditor.get(event.textEditor);
@@ -197,22 +241,24 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 	}
 
 
-	private async findOrCreateEditorByEditorSync (uniqueUrl : string, editorSync : IEditorSync) : Promise<vscode.TextEditor> {
+	private async findOrCreateEditorByEditorSync (editorSync : IEditorSync) : Promise<vscode.TextEditor> {
 		let editor : vscode.TextEditor;
 		let editorBinding = this.editorBindingsByEditorSync.get(editorSync);
 		if (editorBinding && MockableApis.window.visibleTextEditors.includes(editorBinding.editor)) {
 			editor = editorBinding.editor;
 		} else {
-			editor = await this.createAndRegisterNewEditor(editorSync, uniqueUrl);
+			editor = await this.createAndRegisterNewEditor(editorSync);
 		}
 		return editor;
 	}
 
-	private async createAndRegisterNewEditor(editorSync: IEditorSync, uniqueUrl: string) : Promise<vscode.TextEditor> {
+	private async createAndRegisterNewEditor(editorSync: IEditorSync) : Promise<vscode.TextEditor> {
 		let bufferSync = editorSync.getBufferSync();
-		const buffer = await this.findOrCreateBufferForBufferSync(bufferSync, uniqueUrl);
 		const bufferBinding = this.bufferBindingsByBufferSync.get(bufferSync);
-		let editor = await MockableApis.window.showTextDocument(buffer);
+		if(!bufferBinding) {
+			throw new Error("Cannot activate editorsync "+editorSync+" since its not yet cached");
+		}
+		let editor = await MockableApis.window.showTextDocument(bufferBinding.buffer);
 		await MockableApis.commands.executeCommand('workbench.action.keepEditor');
 		if (bufferBinding) {
 			bufferBinding.editor = editor;
@@ -230,31 +276,28 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 		this.editorsBySyncs.set(editorSync, editor);
 	}
 
-	private async findOrCreateBufferForBufferSync (bufferSync : IBufferSync, uniqueUrl : string) : Promise<vscode.TextDocument> {
-		let buffer : vscode.TextDocument;
+	private async findOrCreateBufferForBufferSync (bufferSync : IBufferSync, uniqueUrl : string) : Promise<BufferBinding> {
 		let bufferBinding = this.bufferBindingsByBufferSync.get(bufferSync);
-		if (bufferBinding) {
-			buffer = bufferBinding.buffer;
-		} else {
-			buffer = await this.createAndRegisterNewBuffer(uniqueUrl, bufferSync);
+		if (!bufferBinding) { 
+			bufferBinding = await this.createAndRegisterNewBuffer(uniqueUrl, bufferSync);
 		}
-		return buffer;
+		return bufferBinding;
 	}
 
 
-	private async createAndRegisterNewBuffer(uniqueUrl: string, bufferSync: IBufferSync) : Promise<vscode.TextDocument> {
+	private async createAndRegisterNewBuffer(uniqueUrl: string, bufferSync: IBufferSync) : Promise<BufferBinding> {
 		const bufferURI = await this.createTemporaryFileForBufferUrl(uniqueUrl);
 		this.remoteFiles.add(bufferURI.path.toLocaleLowerCase());
 		let buffer = await MockableApis.workspace.openTextDocument(bufferURI);
-		this.registerNewBindingForBufferAndSync(buffer, bufferSync);
-		return buffer;
+		return this.registerNewBindingForBufferAndSync(buffer, bufferSync, uniqueUrl);
 	}
 
-	private registerNewBindingForBufferAndSync(buffer: vscode.TextDocument, bufferSync: IBufferSync) {
-		let bufferBinding = new BufferBinding(buffer, bufferSync);
+	private registerNewBindingForBufferAndSync(buffer: vscode.TextDocument, bufferSync: IBufferSync, uniqueUrl : string) : BufferBinding {
+		let bufferBinding = new BufferBinding(buffer, bufferSync, uniqueUrl);
 		this.bufferBindingsByBuffer.set(buffer, bufferBinding);
 		this.bufferBindingsByBufferSync.set(bufferSync, bufferBinding);
 		this.bufferSyncsByBuffer.set(buffer, bufferSync);
+		return bufferBinding;
 	}
 
 	private async createTemporaryFileForBufferUrl(uniqueUrl: string) {

@@ -1,9 +1,10 @@
-import { BufferProxy, EditorProxy } from '@atom/teletype-client';
+import { BufferProxy, EditorProxy, Portal } from '@atom/teletype-client';
 import {deepEqual, instance, mock, verify} from 'ts-mockito';
 import { Position } from '../../../../sync/data/position';
 import { Selection } from '../../../../sync/data/selection';
 import { IEditorListener } from '../../../../sync/iEditorListener';
 import { TeletypeEditorSync } from '../../../../sync/teletype/teletypeEditorSync';
+import { TeletypeSyncPortal } from '../../../../sync/teletype/teletypeSyncPortal';
 import { SelectionMap } from '../../../../sync/teletype/types/teletype_types';
 
 suite("TeletypeEditorSync", function () {
@@ -11,14 +12,18 @@ suite("TeletypeEditorSync", function () {
     let bufferProxyClass = mock(BufferProxy);
     let listenerClass = mock<IEditorListener>();
     let editorProxyClass = mock(EditorProxy);
+    let portalClass = mock(Portal);
+    let portalSyncClass = mock(TeletypeSyncPortal);
 
     let bufferProxy = instance(bufferProxyClass);
     let listener = instance(listenerClass);
     let editorProxy = instance(editorProxyClass);
+    let portal = instance(portalClass);
+    let portalSync = instance(portalSyncClass);
 
     (editorProxy as any).bufferProxy = bufferProxy;
 
-    let editorSync = new TeletypeEditorSync(editorProxy);
+    let editorSync = new TeletypeEditorSync(portal, editorProxy, portalSync);
     editorSync.setListener(listener);
 
     test("Test close", function() {

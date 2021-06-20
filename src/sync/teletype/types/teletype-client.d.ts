@@ -67,6 +67,7 @@ declare module '@atom/teletype-client' {
     }
 
     export class EditorProxy {
+        siteId : string;
         constructor(...args: any[]);
 
         bufferProxyDidUpdateMarkers(...args: any[]): void;
@@ -252,6 +253,8 @@ declare module '@atom/teletype-client' {
 
         public id : string;
 
+        public isHost : boolean;
+
         constructor(...args: any[]);
 
         activateEditorProxy(...args: any[]): void;
@@ -274,7 +277,7 @@ declare module '@atom/teletype-client' {
 
         broadcastEditorProxySwitch(...args: any[]): void;
 
-        createBufferProxy(...args: any[]): BufferProxy;
+        createBufferProxy(props: {uri : string}): BufferProxy;
 
         createEditorProxy(...args: any[]): EditorProxy;
 
