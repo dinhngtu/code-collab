@@ -109,6 +109,6 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
     dispose() : void {
         this.executeOnListener(async (listener) => {
             listener.dispose();
-        })
+        });
     }
 }

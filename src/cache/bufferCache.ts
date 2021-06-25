@@ -2,6 +2,7 @@ import { StringPositionCalculator } from "../base/stringPositionCalculator";
 import { TextChange } from "../sync/data/textChange";
 import { IBufferListener } from "../sync/iBufferListener";
 import { IBufferSync } from "../sync/iBufferSync";
+import { BufferCacheListener } from "./iBufferCacheListener";
 
 export class BufferCache implements IBufferListener, IBufferSync {
     
@@ -9,9 +10,14 @@ export class BufferCache implements IBufferListener, IBufferSync {
     private bufferListener : IBufferListener | null = null;
     public text : string = "";
     public isClosed : boolean = false;
+    private cacheListener : BufferCacheListener | null = null;
 
     constructor(private bufferSync : IBufferSync) {
         bufferSync.setListener(this);
+    }
+
+    setCacheListener(cacheListener : BufferCacheListener) {
+        this.cacheListener = cacheListener;
     }
     
     onSetText(text: string): Promise<void> {
@@ -42,6 +48,7 @@ export class BufferCache implements IBufferListener, IBufferSync {
     dispose(): void {
         this.executeOnListener(async (listener) => listener.dispose());
         this.isClosed = true;
+        this.onClose();
     }
 
     sendChangeToRemote(change: TextChange): Promise<void> {
@@ -59,6 +66,13 @@ export class BufferCache implements IBufferListener, IBufferSync {
     close(): void {
         this.bufferSync.close();
         this.isClosed = true;
+        this.onClose();
+    }
+
+    private onClose() {
+        if (this.cacheListener !== null) {
+            this.cacheListener();
+        }
     }
 
     private executeOnListener(call : (listener : IBufferListener) => Promise<void>) : Promise<void> {

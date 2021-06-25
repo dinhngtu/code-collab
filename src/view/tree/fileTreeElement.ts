@@ -15,7 +15,7 @@ export class FileTreeElement extends vscode.TreeItem implements ICollaborationTr
                 editorSync
             ], 
             title: "Open Remote File "+binding.fileName
-        }
+        };
     }
 
     iconPath = {

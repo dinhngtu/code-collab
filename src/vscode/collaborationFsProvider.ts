@@ -67,7 +67,7 @@ export class CollaborationFs implements vscode.FileSystemProvider {
     constructor(public urlBase : string) {
 
     }
-
+    
     registerBufferCache(providertype : string, provider : string, uri : string, cache : BufferCache) : vscode.Uri {
         let lowerprovidertype = providertype.toLowerCase();
         let lowerprovider = provider.toLowerCase().replace(/\//g,"_");
@@ -82,8 +82,16 @@ export class CollaborationFs implements vscode.FileSystemProvider {
             }
         }
         let filename = parts[parts.length-1];
+        let fileUri = vscode.Uri.parse(path+filename);
+        cache.setCacheListener(() => {
+            current.entries.delete(filename);
+            this._fireSoon({
+                type: vscode.FileChangeType.Deleted, 
+                uri: fileUri
+            });
+        });
         current.entries.set(filename, new CollaborationFile(cache, filename));
-        return vscode.Uri.parse(path+filename);
+        return fileUri;
     }
 
     private navigateAndCreate(currentNode : CollaborationDirectory, next : string) : CollaborationDirectory {
@@ -122,7 +130,7 @@ export class CollaborationFs implements vscode.FileSystemProvider {
         console.log("Doing nothing during write of remote file, the remote file is probably just told to save");
         let file = this._lookupAsFile(uri, false);
         if(!file) {
-            throw new Error("Cannot interact with non existing remote file");
+            throw new Error("Cannot interact with not (any longer) existing remote file");
         } 
         if(file.isClosed()) {
             throw new Error("Remote file is closed");
@@ -160,7 +168,7 @@ export class CollaborationFs implements vscode.FileSystemProvider {
             }
             if (!child) {
                 if (!silent) {
-                    throw vscode.FileSystemError.FileNotFound(uri);
+                    throw new Error("File does not exist on remote (anymore)");
                 } else {
                     return undefined;
                 }
