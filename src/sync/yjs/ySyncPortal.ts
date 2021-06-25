@@ -18,7 +18,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     
 
     private peers : Y.Map<Y.Map<Y.Map<any>>>;
-    private editorSyncsByPeerAndFile = new Map<string,Map<string, IEditorSync>>();
+    private editorSyncsByPeerAndFile = new Map<string,Map<string, YEditorSync>>();
     private peerAndKeyByEditorSync = new Map<IEditorSync, PeerAndKey>();
 
     private cleanupHandlers : (() => void)[] = [];
@@ -137,6 +137,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         if(sync) {
             this.editorSyncsByPeerAndFile.get(peer)?.delete(key);
             this.peerAndKeyByEditorSync.delete(sync);
+            sync!.dispose();
             await this.executeOnListener(async (listener) => {
                 await listener.onCloseRemoteFile(sync!);
             });
@@ -175,7 +176,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     private addPeerCache(peer: string) {
         if (!this.editorSyncsByPeerAndFile.has(peer)) {
-            this.editorSyncsByPeerAndFile.set(peer, new Map<string, IEditorSync>());
+            this.editorSyncsByPeerAndFile.set(peer, new Map<string, YEditorSync>());
         }
     }
 

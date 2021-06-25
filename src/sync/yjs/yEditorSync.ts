@@ -10,7 +10,7 @@ import { YTransactionBasedSync } from "./yTransactionBasedSync";
 
 export class YEditorSync extends YTransactionBasedSync<IEditorListener> implements IEditorSync {
 
-    private bufferSync : IBufferSync;
+    private bufferSync : YBufferSync;
     private selectionObserver = this.guard(this.onSelectionChanged.bind(this));
 
     constructor(doc : Y.Doc, localpeer : string, public remoteFile : IRemoteFile) {
@@ -94,6 +94,13 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
 
     close(): void {
         this.remoteFile.selections.unobserve(this.selectionObserver);
+    }
+
+    dispose() : void {
+        this.bufferSync.dispose();
+        this.executeOnListener(async (listener) => {
+            listener.dispose();
+        });
     }
 
 }

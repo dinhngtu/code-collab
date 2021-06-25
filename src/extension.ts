@@ -7,6 +7,8 @@ import { YJSConnector } from './view/connector/yjsConnector';
 import { MultiConnector } from './view/connector/multiConnector';
 import { PeerFileDecorationProvider } from './view/tree/peerFileDecorationProvider';
 import { ExtensionContext } from './extensionContext';
+import { IEditorSync } from './sync/iEditorSync';
+import PortalBinding from './PortalBinding';
 
 let extensionContext = ExtensionContext.default();
 
@@ -32,6 +34,10 @@ export function activate(context: vscode.ExtensionContext) {
 		} catch(error) {
 			await vscode.window.showErrorMessage(error.message);
 		}
+	});
+
+	vscode.commands.registerCommand("extension.openCollabFile", (portalBinding : PortalBinding, editorSync : IEditorSync) => {
+		portalBinding.activateRemoteFile(editorSync);
 	});
 }
 

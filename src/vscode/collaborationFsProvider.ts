@@ -30,6 +30,10 @@ export class CollaborationFile implements vscode.FileStat {
     getData() : Uint8Array {
         return Buffer.from(this.bufferCache.text);
     }
+
+    isClosed() : boolean {
+        return this.bufferCache.isClosed;
+    }
 }
 
 export class CollaborationDirectory implements vscode.FileStat {
@@ -116,6 +120,13 @@ export class CollaborationFs implements vscode.FileSystemProvider {
 
     writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
         console.log("Doing nothing during write of remote file, the remote file is probably just told to save");
+        let file = this._lookupAsFile(uri, false);
+        if(!file) {
+            throw new Error("Cannot interact with non existing remote file");
+        } 
+        if(file.isClosed()) {
+            throw new Error("Remote file is closed");
+        }
     }
 
     // --- manage files/folders

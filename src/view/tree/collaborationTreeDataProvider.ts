@@ -56,7 +56,7 @@ export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<IC
                 let peer = element as PeerTreeElement;
                 let files : FileTreeElement[] = [];
                 for(let file of peer.connection.getFiles(peer.peer)) {
-                    files.push(new FileTreeElement(file));
+                    files.push(new FileTreeElement(peer.connection, file.editorSync, file.bufferBinding));
                 }
                 return files;
             }

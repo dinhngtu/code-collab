@@ -105,4 +105,10 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
         this.buffer.unobserve(this.bufferObserver);
         this.remoteSaveRequests.unobserve(this.saveObserver);
     }
+
+    dispose() : void {
+        this.executeOnListener(async (listener) => {
+            listener.dispose();
+        })
+    }
 }

@@ -8,6 +8,7 @@ export class BufferCache implements IBufferListener, IBufferSync {
     
     private bufferListener : IBufferListener | null = null;
     public text : string = "";
+    public isClosed : boolean = false;
 
     constructor(private bufferSync : IBufferSync) {
         bufferSync.setListener(this);
@@ -40,6 +41,7 @@ export class BufferCache implements IBufferListener, IBufferSync {
 
     dispose(): void {
         this.executeOnListener(async (listener) => listener.dispose());
+        this.isClosed = true;
     }
 
     sendChangeToRemote(change: TextChange): Promise<void> {
@@ -56,6 +58,7 @@ export class BufferCache implements IBufferListener, IBufferSync {
 
     close(): void {
         this.bufferSync.close();
+        this.isClosed = true;
     }
 
     private executeOnListener(call : (listener : IBufferListener) => Promise<void>) : Promise<void> {
