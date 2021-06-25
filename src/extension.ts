@@ -2,15 +2,13 @@
 
 import * as vscode from 'vscode';
 import { CollaborationTreeDataProvider } from './view/tree/collaborationTreeDataProvider';
-import { ConnectionManager } from './connectionManager';
 import { TeletypeConnector } from './view/connector/teletypeConnector';
 import { YJSConnector } from './view/connector/yjsConnector';
 import { MultiConnector } from './view/connector/multiConnector';
 import { PeerFileDecorationProvider } from './view/tree/peerFileDecorationProvider';
-import { ColorManager } from './color/colorManager';
+import { ExtensionContext } from './extensionContext';
 
-let connectionManager = new ConnectionManager();
-let colorManager = new ColorManager();
+let extensionContext = ExtensionContext.default();
 
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
@@ -18,13 +16,15 @@ export function activate(context: vscode.ExtensionContext) {
 
 	console.log('Great, your extension "vscode-teletype" is now active!');
 	
-	vscode.window.registerFileDecorationProvider(new PeerFileDecorationProvider(colorManager));
+	context.subscriptions.push(vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true}));
 
-	let teletypeConnector = new TeletypeConnector(context.workspaceState, connectionManager, colorManager);
-	let yjsConnector = new YJSConnector(connectionManager, colorManager);
-	let multiConnector = new MultiConnector(connectionManager, colorManager, [yjsConnector, teletypeConnector]);
+	vscode.window.registerFileDecorationProvider(new PeerFileDecorationProvider(extensionContext.colorManager));
 
-	vscode.window.registerTreeDataProvider("extension.collaboration", new CollaborationTreeDataProvider(connectionManager));
+	let teletypeConnector = new TeletypeConnector(context.workspaceState, extensionContext);
+	let yjsConnector = new YJSConnector(extensionContext);
+	let multiConnector = new MultiConnector(extensionContext, [yjsConnector, teletypeConnector]);
+
+	vscode.window.registerTreeDataProvider("extension.collaboration", new CollaborationTreeDataProvider(extensionContext.connectionManager));
 
 	vscode.commands.registerCommand("extension.addCollabConnection", async () => {
 		try {
@@ -37,5 +37,5 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 export function deactivate() { 
-	connectionManager.dispose();
+	extensionContext.connectionManager.dispose();
 }

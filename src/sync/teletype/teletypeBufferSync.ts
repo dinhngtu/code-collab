@@ -6,6 +6,7 @@ import { DelayedListenerExecution } from "./delayedListenerExecution";
 
 export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener> implements IBufferSync {
 
+    
     constructor(public bufferProxy : BufferProxy) {
         super();
         this.bufferProxy.setDelegate(this);

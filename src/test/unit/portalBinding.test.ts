@@ -15,6 +15,8 @@ import { fileUrl } from '../../base/functions';
 import { MemorySyncPortal } from '../../sync/memory/memorySyncPortal';
 import { MockWrapper } from './mockWrapper';
 import { ColorManager } from '../../color/colorManager';
+import { ExtensionContext } from '../../extensionContext';
+import * as fs from 'fs';
 
 
 suite("PortalBinding", function () {
@@ -29,11 +31,7 @@ suite("PortalBinding", function () {
     };
     
     var commandsClass = mock() as any;
-    var fsPromisesClass = mock() as any;
     
-    let vol = Volume.fromJSON({
-        "test.txt" : "abc"
-    }, os.tmpdir());
     var memoryWorkspace = new MemoryWorkspace();
     var memoryWindow = new MemoryWindow();
     var syncPortal = new MemorySyncPortal();
@@ -41,10 +39,7 @@ suite("PortalBinding", function () {
     setup(() => {
         memoryWorkspace = new MemoryWorkspace();
         memoryWindow = new MemoryWindow();
-        fsPromisesClass = mock() as any;
         commandsClass = mock() as any;
-        MockableApis.fs = vol;
-        MockableApis.fsPromises = instance(fsPromisesClass);
         MockableApis.window = memoryWindow;
         MockableApis.workspace = memoryWorkspace;
         MockableApis.commands = instance(commandsClass);
@@ -54,7 +49,7 @@ suite("PortalBinding", function () {
 
     test("test open remote file client", async function() {   
         let portalBinding = await createAndInitPortalBinding(syncPortal, false);     
-        await testOpenRemoteFile(portalBinding, fsPromisesClass, vol, memoryWorkspace, memoryWindow, commandsClass);
+        await testOpenRemoteFile(portalBinding, memoryWorkspace, memoryWindow, commandsClass);
     });
 
     test("test close remote file client", async function() {   
@@ -68,7 +63,7 @@ suite("PortalBinding", function () {
 
     test("test open remote file host", async function() {   
         let portalBinding = await createAndInitPortalBinding(syncPortal, true);     
-        await testOpenRemoteFile(portalBinding, fsPromisesClass, vol, memoryWorkspace, memoryWindow, commandsClass);
+        await testOpenRemoteFile(portalBinding, memoryWorkspace, memoryWindow, commandsClass);
     });
 
     test("test open local file host", async function() {   
@@ -105,14 +100,14 @@ suite("PortalBinding", function () {
 
     test("test close local text editor client", async () => {
         let portalBinding = await createAndInitPortalBinding(syncPortal, false);     
-        let editorSync = await testOpenRemoteFile(portalBinding, fsPromisesClass, vol, memoryWorkspace, memoryWindow, commandsClass);
+        let editorSync = await testOpenRemoteFile(portalBinding, memoryWorkspace, memoryWindow, commandsClass);
         memoryWindow.changeVisibleTextEditorListener!([]);
         verify(editorSync.value.close()).twice();
     });
 
     test("test close local text editor host", async () => {
         let portalBinding = await createAndInitPortalBinding(syncPortal, true);     
-        let editorSync = await testOpenRemoteFile(portalBinding, fsPromisesClass, vol, memoryWorkspace, memoryWindow, commandsClass);
+        let editorSync = await testOpenRemoteFile(portalBinding, memoryWorkspace, memoryWindow, commandsClass);
         memoryWindow.changeVisibleTextEditorListener!([]);
         verify(editorSync.value.close()).twice();
     });
@@ -135,14 +130,14 @@ async function openRemoteFile(portalBinding: PortalBinding) {
 }
 
 async function createAndInitPortalBinding(syncPortal: MemorySyncPortal, isHost : boolean) : Promise<PortalBinding> {
-    let portalBinding = new PortalBinding(syncPortal, isHost, "test", new ColorManager());
+    let portalBinding = new PortalBinding(syncPortal, isHost, "test", ExtensionContext.default());
     await portalBinding.initialize();
     assert.strictEqual(syncPortal.localFiles.length, isHost ? 1: 0);
     assertBindings(syncPortal);
     return portalBinding;
 }
 
-async function testOpenRemoteFile(portalBinding: PortalBinding, fsPromisesClass: any, vol : any, memoryWorkspace: MemoryWorkspace, memoryWindow: MemoryWindow, commandsClass: any) {
+async function testOpenRemoteFile(portalBinding: PortalBinding, memoryWorkspace: MemoryWorkspace, memoryWindow: MemoryWindow, commandsClass: any) {
     let mockEditorSyncClass = mock<IEditorSync>();
     let mockEditorSync = instance(mockEditorSyncClass);
     let mockBufferSyncClass = mock<IBufferSync>();
@@ -152,13 +147,8 @@ async function testOpenRemoteFile(portalBinding: PortalBinding, fsPromisesClass:
 
     await portalBinding.onOpenRemoteFile("peer", "test.txt", mockEditorSync);
 
-    
-    let content = vol.readFileSync(path.join(os.tmpdir(), "test.txt")).toString();
-    assert.strictEqual(content, "");
     assert.strictEqual(memoryWorkspace.openedTextDocuments.size, 1);
-    let expectedUri = vscode.Uri.parse(fileUrl(path.join(os.tmpdir(), "test.txt")));
-    //access fsPath, as otherwise it won't be filled in the object and the comparison will fail
-    let _ = expectedUri.fsPath;
+    let expectedUri = vscode.Uri.parse("collabfs://memory/test/test.txt");
     assert.deepStrictEqual(memoryWorkspace.openedTextDocuments.keys().next().value, expectedUri);
     assert.strictEqual(memoryWindow.createdTextEditors.size, 0);    
     verify(commandsClass.executeCommand('workbench.action.keepEditor')).never();

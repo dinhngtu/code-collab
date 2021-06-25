@@ -12,7 +12,8 @@ import { MockableApis } from './base/mockableApis';
 import { fileUrl, removeValueFromArray } from './base/functions';
 import { IPortalBindingListener } from './iPortalBindingListener';
 import { DelayedListenerExecution } from './sync/teletype/delayedListenerExecution';
-import { IColorManager } from './color/iColorManager';
+import { ExtensionContext } from './extensionContext';
+import { BufferCache } from './cache/bufferCache';
 
 export default class PortalBinding  extends DelayedListenerExecution<IPortalBindingListener> implements IPortalListener{
 	private disposed!: boolean;
@@ -29,7 +30,7 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 	public peers : string[] = [];
 
 
-	constructor(public syncPortal : ISyncPortal, public isHost : boolean, public name : string, private colorManager : IColorManager) {
+	constructor(public syncPortal : ISyncPortal, public isHost : boolean, public name : string, private extensionContext : ExtensionContext) {
 		super();
 	}
 
@@ -269,7 +270,7 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 	}
 
 	private registerNewBindingForEditorAndSync(editor: vscode.TextEditor, editorSync: IEditorSync) {
-		let editorBinding = new EditorBinding(editor, editorSync, this.colorManager);
+		let editorBinding = new EditorBinding(editor, editorSync, this.extensionContext.colorManager);
 		this.editorBindingsByEditorSync.set(editorSync, editorBinding);
 		this.editorSyncsByEditor.set(editor, editorSync);
 		this.editorBindingsByEditor.set(editor, editorBinding);
@@ -286,7 +287,8 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 
 
 	private async createAndRegisterNewBuffer(uniqueUrl: string, bufferSync: IBufferSync) : Promise<BufferBinding> {
-		const bufferURI = await this.createTemporaryFileForBufferUrl(uniqueUrl);
+		let bufferCache = new BufferCache(bufferSync);
+		let bufferURI = this.extensionContext.collabFs.registerBufferCache(this.getType(), this.name, uniqueUrl, bufferCache);
 		this.remoteFiles.add(bufferURI.path.toLocaleLowerCase());
 		let buffer = await MockableApis.workspace.openTextDocument(bufferURI);
 		return this.registerNewBindingForBufferAndSync(buffer, bufferSync, uniqueUrl);
@@ -298,17 +300,6 @@ export default class PortalBinding  extends DelayedListenerExecution<IPortalBind
 		this.bufferBindingsByBufferSync.set(bufferSync, bufferBinding);
 		this.bufferSyncsByBuffer.set(buffer, bufferSync);
 		return bufferBinding;
-	}
-
-	private async createTemporaryFileForBufferUrl(uniqueUrl: string) {
-		const bufferPath = path.join(os.tmpdir(), uniqueUrl);
-		const bufferURI = vscode.Uri.parse(fileUrl(bufferPath));
-		let parent = path.dirname(bufferPath);
-		if(!MockableApis.fs.existsSync(parent)) {
-			await MockableApis.fsPromises.mkdir(parent, { recursive: true });
-		}
-		MockableApis.fs.writeFileSync(bufferURI.fsPath, '');
-		return bufferURI;
 	}
 
 }

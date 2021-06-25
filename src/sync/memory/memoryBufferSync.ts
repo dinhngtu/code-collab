@@ -3,6 +3,7 @@ import { IBufferListener } from "../iBufferListener";
 import { IBufferSync } from "../iBufferSync";
 
 export class MemoryBufferSync implements IBufferSync {
+    
 
     localChanges : TextChange[] = [];
     saveCount = 0;
