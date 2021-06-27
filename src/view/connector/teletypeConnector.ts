@@ -7,6 +7,7 @@ import { TeletypeSyncPortal } from "../../sync/teletype/teletypeSyncPortal";
 import { fakeWindow } from "../../base/functions";
 import { IColorManager } from "../../color/iColorManager";
 import { ExtensionContext } from "../../extensionContext";
+import { input } from "../base/viewFunctions";
 
 export class TeletypeConnection {
     public url = 'https://api.teletype.atom.io';
@@ -33,7 +34,7 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
     }
 
     private async connectToPortal(client: TeletypeClient) {
-        let choice = await this.input(async () => vscode.window.showQuickPick(["Create Portal", "Join Portal"], { canPickMany: false }));
+        let choice = await input(async () => vscode.window.showQuickPick(["Create Portal", "Join Portal"], { canPickMany: false }));
         let portal: Portal;
         let host: boolean;
         if (choice === "Create Portal") {
@@ -43,11 +44,11 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
             portal = await this.joinPortal(client);
             host = false;
         }
-        this.addConnection(portal.id, new TeletypeSyncPortal(portal), host);
+        this.addConnection(portal.id, new TeletypeSyncPortal(portal));
     }
 
     private async joinPortal(client: TeletypeClient) {
-        let portalID = await this.input(async () => await vscode.window.showInputBox({ prompt: 'Enter ID of the Portal you wish to join' }));
+        let portalID = await input(async () => await vscode.window.showInputBox({ prompt: 'Enter ID of the Portal you wish to join' }));
         vscode.window.showInformationMessage('Trying to Join Portal with ID' + ' ' + portalID + ' ');
         let portal = await client.joinPortal(portalID);
         vscode.window.showInformationMessage('Joined Portal with ID' + ' ' + portalID + ' ');
@@ -100,10 +101,10 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
 
     private async inputNewConnection(existingConnections: TeletypeConnection[]) {
         let selectedConnection = new TeletypeConnection();
-        selectedConnection.url = await this.input(async () => await vscode.window.showInputBox({ prompt: 'Enter teletype url', value: selectedConnection.url, valueSelection: [0, selectedConnection.url.length] }));
-        selectedConnection.pusherKey = await this.input(async () => await vscode.window.showInputBox({ prompt: 'Enter Pusher Key', value: selectedConnection.pusherKey, valueSelection: [0, selectedConnection.pusherKey.length] }));
-        selectedConnection.pusherCluster = await this.input(async () => await vscode.window.showInputBox({ prompt: 'Enter Pusher Cluster', value: selectedConnection.pusherCluster, valueSelection: [0, selectedConnection.pusherCluster.length] }));
-        selectedConnection.authToken = await this.input(async () => await vscode.window.showInputBox({ prompt: 'Enter OAuth Token', value: selectedConnection.authToken, valueSelection: [0, selectedConnection.authToken.length] }));
+        selectedConnection.url = await input(async () => await vscode.window.showInputBox({ prompt: 'Enter teletype url', value: selectedConnection.url, valueSelection: [0, selectedConnection.url.length] }));
+        selectedConnection.pusherKey = await input(async () => await vscode.window.showInputBox({ prompt: 'Enter Pusher Key', value: selectedConnection.pusherKey, valueSelection: [0, selectedConnection.pusherKey.length] }));
+        selectedConnection.pusherCluster = await input(async () => await vscode.window.showInputBox({ prompt: 'Enter Pusher Cluster', value: selectedConnection.pusherCluster, valueSelection: [0, selectedConnection.pusherCluster.length] }));
+        selectedConnection.authToken = await input(async () => await vscode.window.showInputBox({ prompt: 'Enter OAuth Token', value: selectedConnection.authToken, valueSelection: [0, selectedConnection.authToken.length] }));
         existingConnections.push(selectedConnection);
         return selectedConnection;
     }
@@ -116,7 +117,7 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
         let names = Array.from(namedConnections.keys());
         names.push("New...");
 
-        let choice = await this.input(async () => await vscode.window.showQuickPick(names, { canPickMany: false }));
+        let choice = await input(async () => await vscode.window.showQuickPick(names, { canPickMany: false }));
         if (choice !== "New...") {
             selectedConnection = namedConnections.get(choice);
         }

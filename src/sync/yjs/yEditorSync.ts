@@ -93,7 +93,9 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
     }
 
     close(): void {
-        this.remoteFile.selections.unobserve(this.selectionObserver);
+        if(this.remoteFile.selections) {
+            this.remoteFile.selections.unobserve(this.selectionObserver);
+        }
     }
 
     dispose() : void {

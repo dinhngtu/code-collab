@@ -1,11 +1,11 @@
 import { ICollaborationTreeElement } from "./iCollaborationTreeElement";
 import * as vscode from 'vscode';
 import * as path from 'path';
-import PortalBinding from "../../PortalBinding";
+import { SyncConnection } from "../../binding/syncConnection";
 
 export class PeerTreeElement extends vscode.TreeItem implements ICollaborationTreeElement {
-    constructor(public connection : PortalBinding, public peer : string) {
-        super(peer, connection.getFiles(peer).length === 0?vscode.TreeItemCollapsibleState.None:vscode.TreeItemCollapsibleState.Expanded);
+    constructor(public syncConnection : SyncConnection, public peer : string) {
+        super(peer, syncConnection.shareRemoteToLocal.getFiles(peer).length === 0?vscode.TreeItemCollapsibleState.None:vscode.TreeItemCollapsibleState.Expanded);
         this.resourceUri=vscode.Uri.parse("collab-peer://"+peer);
     }
 

@@ -7,6 +7,10 @@ import { IRemoteFile, RemoteFile, RemoteFileProxy } from "./remoteFile";
 import * as uuid from 'uuid';
 import { RemoteSelection } from "./remoteSelection";
 import { YTransactionBasedSync } from "./yTransactionBasedSync";
+import * as vscode from 'vscode';
+
+
+const noneUri = vscode.Uri.parse("none://");
 
 type PeerAndKey = {
     peer : string, 
@@ -37,6 +41,11 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
             this.peers.unobserve(observer);
         });
     }
+
+    isHost(): boolean {
+        return true;
+    }
+
     getType(): string {
         return "YJS";
     }
@@ -114,7 +123,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         console.debug("Adding remote file "+key+"@"+peer+"(active="+remoteFile.isActive+")");
         this.addObserverOnFile(peer, key, file);
         await this.executeOnListener(async (listener) => {
-            await listener.onOpenRemoteFile(peer, remoteFile.uri, this.getEditorSync(peer, key, remoteFile));
+            await listener.onOpenRemoteFile(peer, remoteFile.uri,noneUri, this.getEditorSync(peer, key, remoteFile));
         });
         if (remoteFile.isActive) {
             await this.activateRemoteFile(peer, key, remoteFile);

@@ -1,15 +1,16 @@
 import * as vscode from 'vscode';
 import { ConnectionManager } from '../../connectionManager';
 import { IConnectionManagerListener } from '../../iConnectionManagerListener';
-import PortalBinding from '../../PortalBinding';
 import { ICollaborationTreeElement } from './iCollaborationTreeElement';
 import { ConnectionsTreeElement } from './connectionsTreeElement';
 import { ConnectionTreeElement } from './connectionTreeElement';
 import { PeerTreeElement } from './peerTreeElement';
-import { IPortalBindingListener } from '../../iPortalBindingListener';
 import { FileTreeElement } from './fileTreeElement';
+import { SyncConnection } from '../../binding/syncConnection';
+import { IPeerManagementListener } from '../../binding/iPeerManagementListener';
+import { IRemoteFileManagementListener } from '../../binding/iRemoteFileManagementListener';
 
-export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<ICollaborationTreeElement>, IConnectionManagerListener, IPortalBindingListener {
+export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<ICollaborationTreeElement>, IConnectionManagerListener, IPeerManagementListener, IRemoteFileManagementListener {
 
     private _onDidChangeTreeData: vscode.EventEmitter<ICollaborationTreeElement | undefined | null> = new vscode.EventEmitter<ICollaborationTreeElement | undefined | null>();
 
@@ -25,8 +26,9 @@ export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<IC
         this._onDidChangeTreeData.fire(undefined);
     }
 
-    onConnectionAdded(connection: PortalBinding): void {
-        connection.setListener(this);
+    onConnectionAdded(connection: SyncConnection): void {
+        connection.shareRemoteToLocal.setListener(this);
+        connection.peerManager.setListener(this);
         this._onDidChangeTreeData.fire(undefined);
     }
     
@@ -46,17 +48,17 @@ export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<IC
                 return Promise.resolve(connections);
             } else if(element instanceof ConnectionTreeElement) {
                 let connection = element as ConnectionTreeElement;
-                let portal = connection.binding;
+                let syncConnection = connection.connection;
                 let peers : PeerTreeElement[] = [];
-                for(let peer of portal.peers) {
-                    peers.push(new PeerTreeElement(connection.binding, peer));
+                for(let peer of syncConnection.peerManager.peers) {
+                    peers.push(new PeerTreeElement(syncConnection, peer));
                 }
                 return Promise.resolve(peers);
             } else if(element instanceof PeerTreeElement) {
                 let peer = element as PeerTreeElement;
                 let files : FileTreeElement[] = [];
-                for(let file of peer.connection.getFiles(peer.peer)) {
-                    files.push(new FileTreeElement(peer.connection, file.editorSync, file.bufferBinding));
+                for(let file of peer.syncConnection.shareRemoteToLocal.getFiles(peer.peer)) {
+                    files.push(new FileTreeElement(peer.syncConnection, file.editorSync, file.bufferBinding));
                 }
                 return files;
             }

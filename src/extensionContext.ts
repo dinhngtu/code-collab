@@ -1,6 +1,6 @@
 import { ColorManager } from "./color/colorManager";
 import { ConnectionManager } from "./connectionManager";
-import { CollaborationFs } from "./vscode/collaborationFsProvider";
+import { CollaborationFs } from "./filesystem/collaborationFsProvider";
 
 export class ExtensionContext {
 

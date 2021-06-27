@@ -8,4 +8,5 @@ export interface ISyncPortal {
     setListener(listener : IPortalListener) : void;
     close() : void;
     getType() : string;
+    isHost() : boolean;
 }

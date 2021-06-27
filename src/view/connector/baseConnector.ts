@@ -1,7 +1,6 @@
-import { IColorManager } from "../../color/iColorManager";
-import { ConnectionManager } from "../../connectionManager";
+import { SyncConnection } from "../../binding/syncConnection";
+import { CachedSyncPortal } from "../../cache/cachedSyncPortal";
 import { ExtensionContext } from "../../extensionContext";
-import PortalBinding from "../../PortalBinding";
 import { ISyncPortal } from "../../sync/iSyncPortal";
 
 export abstract class BaseConnector {
@@ -9,17 +8,11 @@ export abstract class BaseConnector {
 
     }
 
-    protected addConnection(name : string, syncPortal : ISyncPortal, host : boolean) {
-        let binding = new PortalBinding(syncPortal, host,name, this.extensionContext);
+    protected addConnection(name : string, syncPortal : ISyncPortal) {
+        let binding = new SyncConnection(this.extensionContext,new CachedSyncPortal(syncPortal, this.extensionContext,name),name);
         binding.initialize();
         this.extensionContext.connectionManager.addConnection(binding);
     }
 
-    protected async input(inputter : () => Promise<string | undefined | null>) {
-        let result = await inputter();
-        if(!result) {
-            throw new Error("Input aborted by user");
-        }
-        return result;
-    }
+    
 }

@@ -13,6 +13,10 @@ export class MemorySyncPortal implements ISyncPortal {
     listener : IPortalListener | null = null;
     closeCount = 0;
 
+    isHost(): boolean {
+        return true;
+    }
+
     getType(): string {
         return "Memory";
     }

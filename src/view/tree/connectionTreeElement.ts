@@ -1,11 +1,11 @@
 import { ICollaborationTreeElement } from "./iCollaborationTreeElement";
 import * as vscode from 'vscode';
 import * as path from 'path';
-import PortalBinding from "../../PortalBinding";
+import { SyncConnection } from "../../binding/syncConnection";
 
 export class ConnectionTreeElement extends vscode.TreeItem implements ICollaborationTreeElement {
-    constructor(public binding : PortalBinding) {
-        super(binding.getName() + " ("+binding.getType()+")", binding.peers.length === 0?vscode.TreeItemCollapsibleState.None:vscode.TreeItemCollapsibleState.Expanded);
+    constructor(public connection : SyncConnection) {
+        super(connection.getName() + " ("+connection.getType()+")", connection.peerManager.peers.length === 0?vscode.TreeItemCollapsibleState.None:vscode.TreeItemCollapsibleState.Expanded);
         console.log(JSON.stringify(this.iconPath));
     }
 

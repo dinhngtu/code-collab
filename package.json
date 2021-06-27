@@ -28,6 +28,14 @@
 					"light": "resources/light/add.svg",
 					"dark": "resources/dark/add.svg"
 				}
+			},
+			{
+				"title" : "Share via Collaboration",
+				"command" : "extension.shareItem"
+			},
+			{
+				"title" : "Unshare via Collaboration",
+				"command" : "extension.unshareItem"
 			}
 		],
 		"views": {
@@ -44,6 +52,16 @@
 					"command": "extension.addCollabConnection",
 					"when": "view == extension.collaboration && viewItem == connections",
 					"group": "inline"
+				}
+			], 
+			"explorer/context": [ 
+				{
+					"command" : "extension.shareItem",
+					"when" : "!explorerResourceIsFolder"
+				},
+				{
+					"command" : "extension.unshareItem",
+					"when" : "resourcePath in ext.sharedFiles"
 				}
 			]
 		},

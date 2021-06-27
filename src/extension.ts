@@ -8,9 +8,13 @@ import { MultiConnector } from './view/connector/multiConnector';
 import { PeerFileDecorationProvider } from './view/tree/peerFileDecorationProvider';
 import { ExtensionContext } from './extensionContext';
 import { IEditorSync } from './sync/iEditorSync';
-import PortalBinding from './PortalBinding';
+import { SharingFileDecorationProvider } from './view/sharing/sharingFileDecorationProvider';
+import { FileSharer } from './view/sharing/fileSharer';
+import { SyncConnection } from './binding/syncConnection';
 
 let extensionContext = ExtensionContext.default();
+let shareProvider = new SharingFileDecorationProvider(extensionContext.connectionManager);
+let fileSharer = new FileSharer(extensionContext.connectionManager, shareProvider);
 
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
@@ -21,6 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true}));
 
 	vscode.window.registerFileDecorationProvider(new PeerFileDecorationProvider(extensionContext.colorManager));
+	vscode.window.registerFileDecorationProvider(shareProvider);
 
 	let teletypeConnector = new TeletypeConnector(context.workspaceState, extensionContext);
 	let yjsConnector = new YJSConnector(extensionContext);
@@ -36,8 +41,24 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 	});
 
-	vscode.commands.registerCommand("extension.openCollabFile", (portalBinding : PortalBinding, editorSync : IEditorSync) => {
-		portalBinding.activateRemoteFile(editorSync);
+	vscode.commands.registerCommand("extension.openCollabFile", (syncConnection : SyncConnection, editorSync : IEditorSync) => {
+		syncConnection.shareRemoteToLocal.activateRemoteFile(editorSync);
+	});
+
+	vscode.commands.registerCommand("extension.shareItem",async (uri : vscode.Uri)=> {
+		try {
+			await fileSharer.shareFile(uri);
+		} catch(error) {
+			await vscode.window.showErrorMessage(error.message);
+		}
+	});
+
+	vscode.commands.registerCommand("extension.unshareItem",async (uri : vscode.Uri)=> {
+		try {
+			await fileSharer.unshareFile(uri);
+		} catch(error) {
+			await vscode.window.showErrorMessage(error.message);
+		}
 	});
 }
 

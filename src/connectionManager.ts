@@ -1,13 +1,12 @@
 import { IDisposable } from "./base/iDisposable";
+import { SyncConnection } from "./binding/syncConnection";
 import { IConnectionManagerListener } from "./iConnectionManagerListener";
-import PortalBinding from "./PortalBinding";
-import { ISyncPortal } from "./sync/iSyncPortal";
 import { DelayedListenerExecution } from "./sync/teletype/delayedListenerExecution";
 
 export class ConnectionManager extends DelayedListenerExecution<IConnectionManagerListener> implements IDisposable {
-    private connections : PortalBinding [] = [];
+    private connections : SyncConnection [] = [];
 
-    addConnection(connection : PortalBinding) {
+    addConnection(connection : SyncConnection) {
         this.connections.push(connection);
         this.executeOnListener(async (listener) => {
             listener.onConnectionAdded(connection);

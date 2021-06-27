@@ -4,6 +4,9 @@ import { IPortalListener } from "../iPortalListener";
 import { ISyncPortal } from "../iSyncPortal";
 import { DelayedListenerExecution } from "./delayedListenerExecution";
 import { TeletypeEditorSync } from "./teletypeEditorSync";
+import * as vscode from 'vscode';
+
+const noneUri = vscode.Uri.parse("none://");
 
 export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener> implements ISyncPortal {
 
@@ -18,6 +21,11 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
             });
         }
     }
+
+    isHost(): boolean {
+        return this.portal.isHost;
+    }
+
     getType(): string {
         return "Teletype";
     }
@@ -30,7 +38,7 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
         if(!this.portal.isHost) {
             this.executeOnListener(async (listener) => {
                 await listener.onCloseRemoteFile(sync);
-            })    
+            });    
         }
     }
     
@@ -66,14 +74,14 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
             let uniquePath = this.getUniquePath(editorProxy);
             if(this.syncsByProxy.has(editorProxy)) {
                 this.executeOnListener(async (listener) => {
-                    await listener.onOpenRemoteFile("host", uniquePath, this.syncsByProxy.get(editorProxy)!);
+                    await listener.onOpenRemoteFile("host", uniquePath, noneUri, this.syncsByProxy.get(editorProxy)!);
                     await listener.onActivateRemoveFile(this.syncsByProxy.get(editorProxy)!);
                 });
             } else {
                 let editorSync = new TeletypeEditorSync(this.portal,editorProxy,this);
                 this.syncsByProxy.set(editorProxy, editorSync);
                 this.executeOnListener(async (listener) => {
-                    await listener.onOpenRemoteFile("host", uniquePath,editorSync);
+                    await listener.onOpenRemoteFile("host", uniquePath,noneUri,editorSync);
                     await listener.onActivateRemoveFile(editorSync);
                 });
             }
