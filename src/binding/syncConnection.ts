@@ -26,7 +26,7 @@ export class SyncConnection {
 
     public bindingStorage : IBindingStorage = new BindingStorage();
     public editorManager : EditorManager = new EditorManager(this.bindingStorage);
-    public documentListener : IDocumentListener = new DocumentListener(this.bindingStorage);
+    public documentListener : DocumentListener = new DocumentListener(this.bindingStorage);
     public bufferBindingFactory : IBufferBindingFactory = new BufferBindingFactory();
     public editorBindingFactory : IEditorBindingFactory = new EditorBindingFactory(this.extensionContext.colorManager);
     public shareLocalToRemote : IShareLocalToRemote = new ShareLocalToRemote(this.documentListener, this.editorManager, this.bindingStorage, this.bufferBindingFactory, this.editorBindingFactory, this.syncPortal);
@@ -44,6 +44,7 @@ export class SyncConnection {
     }
 
     initialize() {
+        this.documentListener.initialize();
         this.editorListener.initialize();
         this.editorManager.initialize();
     }

@@ -19,7 +19,7 @@ suite("YSyncPortal", function () {
     setup(() => {
         listenerClass = mock<IPortalListener>();
         listener = instance(listenerClass);
-        when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything())).thenReturn(Promise.resolve());
+        when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything(), anything())).thenReturn(Promise.resolve());
         when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
         syncPortal.close();
         doc = new Y.Doc();
@@ -41,7 +41,7 @@ suite("YSyncPortal", function () {
     test("Test syncFileToLocal", async function() {
         doc.getMap("peers").get(syncPortal.localPeer)!.set("test.txt",new RemoteFile("234", "test.txt",new Y.Array<RemoteSelection>(), new Y.Text(), true, new Y.Array<string>()));
         await sleep(20);
-        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything())).once();
+        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything(),anything())).once();
         verify(listenerClass.onActivateRemoveFile(anything())).once();
     
     });
@@ -49,7 +49,7 @@ suite("YSyncPortal", function () {
     test("Test activateFileToLocal", function() {
         let file = new RemoteFile("234", "test.txt",new Y.Array<RemoteSelection>(), new Y.Text(), false, new Y.Array<string>());
         doc.getMap("peers").get(syncPortal.localPeer)!.set("test.txt",file);
-        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything())).once();
+        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything(),anything())).once();
         verify(listenerClass.onActivateRemoveFile(anything())).never();
         file.isActive = true;
         verify(listenerClass.onActivateRemoveFile(anything())).once();

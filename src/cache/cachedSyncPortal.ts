@@ -8,7 +8,7 @@ import * as vscode from 'vscode';
 
 export class CachedSyncPortal extends DelayedListenerExecution<IPortalListener> implements ISyncPortal, IPortalListener {
 
-    private cachesBySync = new Map<IEditorSync, IEditorSync>();
+    public cachesBySync = new Map<IEditorSync, IEditorSync>();
 
     constructor(private delegate : ISyncPortal, private extensionContext : ExtensionContext, private name : string) {
         super();

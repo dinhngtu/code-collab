@@ -6,6 +6,7 @@ import { TeletypeEditorSync } from '../../../../sync/teletype/teletypeEditorSync
 import { TeletypeSyncPortal } from '../../../../sync/teletype/teletypeSyncPortal';
 import * as assert from 'assert';
 import { sleep } from '../../../../base/functions';
+import * as vscode from 'vscode';
 
 suite("TeletypeSyncPortal", function () {
 
@@ -18,7 +19,7 @@ suite("TeletypeSyncPortal", function () {
     let bufferProxy = instance(bufferProxyClass);
     let listener = instance(listenerClass);
     when(portalClass.getSiteIdentity(1234)).thenReturn({login: "1234"});
-    when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything())).thenReturn(Promise.resolve());
+    when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything(), anything())).thenReturn(Promise.resolve());
     when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
 
     let editorProxy = instance(editorProxyClass);
@@ -67,7 +68,7 @@ suite("TeletypeSyncPortal", function () {
 
     test("Test empty tether", function() {
         portalSync.updateTether(null,null,null);
-        verify(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything())).never();
+        verify(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything(), anything())).never();
     });
 
     
@@ -78,17 +79,17 @@ suite("TeletypeSyncPortal", function () {
         };
         (portal as any).id = "123";
         var editorSync : IEditorSync | null = null;
-        when(listenerClass.onOpenRemoteFile(strictEqual("host"),strictEqual("/123/abc"), anything())).thenCall((peer: string, url: string, sync : IEditorSync) => {
+        when(listenerClass.onOpenRemoteFile(strictEqual("host"),strictEqual("/123/abc"), anything(), anything())).thenCall((peer: string, url: string,uri: vscode.Uri, sync : IEditorSync) => {
             editorSync = sync;
         });
         portalSync.updateTether(null,newProxy,null);
         await sleep(20);
         assert.ok(editorSync);
-        verify(listenerClass.onOpenRemoteFile("host","/123/abc", editorSync)).once();
+        verify(listenerClass.onOpenRemoteFile("host","/123/abc",anything(), editorSync)).once();
         verify(listenerClass.onActivateRemoveFile(editorSync)).once();
         portalSync.updateTether(null,newProxy,null);
         await sleep(20);
-        verify(listenerClass.onOpenRemoteFile("host","/123/abc", editorSync)).twice();
+        verify(listenerClass.onOpenRemoteFile("host","/123/abc",anything(), editorSync)).twice();
         verify(listenerClass.onActivateRemoveFile(editorSync)).twice();
     });
 

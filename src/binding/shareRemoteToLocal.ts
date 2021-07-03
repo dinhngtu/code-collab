@@ -43,7 +43,6 @@ export class ShareRemoteToLocal extends DelayedListenerExecution<IRemoteFileMana
             bufferBinding.editor = editor;
             this.registerNewBindingForEditorAndSync(editor, editorSync);
         }
-        throw new Error("Method not implemented.");
     }
 
     async onCloseRemoteFile(editorSync: IEditorSync): Promise<void> {
@@ -70,6 +69,11 @@ export class ShareRemoteToLocal extends DelayedListenerExecution<IRemoteFileMana
 			this.remoteFileEntryBySync.delete(bufferBinding);
 			removeValueFromArray(this.filesByPeer.get(this.peersByFile.get(bufferBinding)!)!, entry);
 			this.peersByFile.delete(bufferBinding);
+			this.bindingStorage.deleteBufferBinding(bufferBinding);
+			let editorBinding = this.bindingStorage.findEditorBindingBySync(editorSync);
+			if(editorBinding) {
+				this.bindingStorage.deleteEditorBinding(editorBinding);
+			}
 			this.informFileListeners();
 		}
 	}

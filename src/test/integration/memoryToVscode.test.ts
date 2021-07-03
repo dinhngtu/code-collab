@@ -1,7 +1,6 @@
 import assert = require('assert');
 import * as vscode from 'vscode';
 import { MockableApis } from "../../base/mockableApis";
-import PortalBinding from "../../PortalBinding";
 import { Position } from '../../sync/data/position';
 import { TextChange, TextChangeType } from '../../sync/data/textChange';
 import { MemoryBufferSync } from "../../sync/memory/memoryBufferSync";
@@ -12,31 +11,35 @@ import { fileUrl, sleep } from '../../base/functions';
 import { IBufferListener } from '../../sync/iBufferListener';
 import * as fs from 'fs';
 import { ExtensionContext } from '../../extensionContext';
+import { SyncConnection } from '../../binding/syncConnection';
+import { CachedSyncPortal } from '../../cache/cachedSyncPortal';
 
 suite("MemoryToVscodeTest", function () {
 
-    let syncPortal = new MemorySyncPortal();
     let extensionContext = ExtensionContext.default();
-    
-    let portalBinding = new PortalBinding(syncPortal, true, "test", extensionContext);
+    let memorySyncPortal = new MemorySyncPortal();    
+    let syncPortal = new CachedSyncPortal(memorySyncPortal, extensionContext, "test");
+    let syncConnection = new SyncConnection(extensionContext, syncPortal, "test");
+    vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true})
 
     suiteSetup(async () => {
         MockableApis.restore();
-        portalBinding.initialize();
+        syncConnection.initialize();
         
     });
 
     setup(async () => {
         await closeOpenWindows();
         await closeOpenWindows();
-        syncPortal.localFiles = [];
-        syncPortal.activeEditorSync = null;
+        memorySyncPortal.localFiles = [];
+        memorySyncPortal.activeEditorSync = null;
     });
 
     test("test open remote file and edit", async () => {
         let editorSync = new MemoryEditorSync();
-        await syncPortal.listener?.onOpenRemoteFile("peer","test.txt", editorSync);
-        await syncPortal.listener?.onActivateRemoveFile(editorSync);
+        await syncPortal.onOpenRemoteFile("peer","test.txt", vscode.Uri.parse("file://none"), editorSync);
+        await syncPortal.onActivateRemoveFile(editorSync);
+        await syncConnection.shareRemoteToLocal.activateRemoteFile(syncPortal.cachesBySync.get(editorSync)!);
         let activeEditor = vscode.window.activeTextEditor;
         let bufferSync = (editorSync.getBufferSync() as MemoryBufferSync);
         let bufferListener =  bufferSync.listener!;
@@ -54,9 +57,11 @@ suite("MemoryToVscodeTest", function () {
         
         let buffer = await vscode.workspace.openTextDocument(vscode.Uri.parse(fileUrl(tmpFile.path)));
         let editor = await vscode.window.showTextDocument(buffer);
+        await syncConnection.shareLocalToRemote.shareFile(buffer.uri);
+        
 
-        assert.strictEqual(syncPortal.localFiles.length, 1);
-        let editorSync = syncPortal.activeEditorSync;
+        assert.strictEqual(memorySyncPortal.localFiles.length, 1);
+        let editorSync = memorySyncPortal.editorSyncFiles.keys().next().value;
         assert.ok(editorSync);
         let bufferSync = editorSync.getBufferSync() as MemoryBufferSync;
         assert.ok(bufferSync);
@@ -77,8 +82,9 @@ suite("MemoryToVscodeTest", function () {
 
     test("Test open remote file and send many changes", async () => {
         let editorSync = new MemoryEditorSync();
-        await syncPortal.listener?.onOpenRemoteFile("peer","test.txt", editorSync);
-        await syncPortal.listener?.onActivateRemoveFile(editorSync);
+        await syncPortal.onOpenRemoteFile("peer","test.txt", vscode.Uri.parse("collabfs://memory/test.txt"),editorSync);
+        await syncPortal.onActivateRemoveFile(editorSync);
+        await syncConnection.shareRemoteToLocal.activateRemoteFile(syncPortal.cachesBySync.get(editorSync)!);
         let activeEditor = vscode.window.activeTextEditor;
         let bufferSync = (editorSync.getBufferSync() as MemoryBufferSync);
         let bufferListener =  bufferSync.listener!;
@@ -108,17 +114,17 @@ async function localEdit(editor: vscode.TextEditor, bufferSync: MemoryBufferSync
     await editor.edit((editBuilder) => {
         editBuilder.insert(new vscode.Position(0, 1), "a");
     });
-    pollEqual(500, 1, () => bufferSync.localChanges.length);
+    await pollEqual(500, 1, () => bufferSync.localChanges.length);
     assert.deepStrictEqual(bufferSync.localChanges[0], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 1), "a"));
     await editor.edit((editBuilder) => {
         editBuilder.replace(new vscode.Range(new vscode.Position(0, 1), new vscode.Position(0, 2)), "e");
     });
-    pollEqual(500, 2, () => bufferSync.localChanges.length);
+    await pollEqual(500, 2, () => bufferSync.localChanges.length);
     assert.deepStrictEqual(bufferSync.localChanges[1], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 2), "e"));
     await editor.edit((editBuilder) => {
         editBuilder.delete(new vscode.Range(new vscode.Position(0, 1), new vscode.Position(0, 2)));
     });
-    pollEqual(500, 3, () => bufferSync.localChanges.length);
+    await pollEqual(500, 3, () => bufferSync.localChanges.length);
     assert.deepStrictEqual(bufferSync.localChanges[2], new TextChange(TextChangeType.UPDATE, new Position(0, 1), new Position(0, 2), ""));
 }
 

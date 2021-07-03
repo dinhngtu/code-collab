@@ -22,17 +22,6 @@ export class EditorManager implements IEditorManager {
         this.onDidChangeActiveTextEditor(MockableApis.window.activeTextEditor);
     }
 
-    isOpen(uri: vscode.Uri): boolean {
-        return this.openEditors.has(uri.fsPath);
-    }
-
-    getOpenEditor(uri: vscode.Uri): vscode.TextEditor {
-        if(!this.isOpen(uri)) {
-			throw new Error("Uri is not opened in an editor");
-		}
-		return this.openEditors.get(uri.fsPath)!;
-    }
-
     async openDocument(uri: vscode.Uri): Promise<vscode.TextDocument> {
         return await MockableApis.workspace.openTextDocument(uri);
     }
@@ -46,9 +35,18 @@ export class EditorManager implements IEditorManager {
         return editor;
     }
 
+	isOpen(uri: vscode.Uri): boolean {
+        return this.openEditors.has(uri.fsPath);
+    }
 
+    getOpenEditor(uri: vscode.Uri): vscode.TextEditor {
+        if(!this.isOpen(uri)) {
+			throw new Error("Uri is not opened in an editor");
+		}
+		return this.openEditors.get(uri.fsPath)!;
+    }
 
-	private async onDidChangeActiveTextEditor (event : vscode.TextEditor | undefined) {
+	async onDidChangeActiveTextEditor (event : vscode.TextEditor | undefined) {
 		if(event) {
 			this.setEditorAsOpen(event);
 	
@@ -56,6 +54,17 @@ export class EditorManager implements IEditorManager {
 				this.executeOnListeners((listener) => {
 					listener.onLocalFileOpened(event);
 				});
+			}
+		}
+	}
+
+	onDidChangeVisibleTextEditors(editors : vscode.TextEditor[]) {
+		for(let editor of this.bindingStorage.getEditors()) {
+			if(!editors.includes(editor)) {
+				let editorSync = this.bindingStorage.findEditorSyncByEditor(editor)!;
+				let buffer = editor.document;
+				this.openEditors.delete(buffer.uri.fsPath);
+				this.bindingStorage.deleteEditorBinding(this.bindingStorage.findEditorBindingBySync(editorSync)!);
 			}
 		}
 	}
@@ -76,16 +85,7 @@ export class EditorManager implements IEditorManager {
 		}
 	}
 
-	private onDidChangeVisibleTextEditors(editors : vscode.TextEditor[]) {
-		for(let editor of this.bindingStorage.getEditors()) {
-			if(!editors.includes(editor)) {
-				let editorSync = this.bindingStorage.findEditorSyncByEditor(editor)!;
-				let buffer = editor.document;
-				this.openEditors.delete(buffer.uri.fsPath);
-				this.bindingStorage.deleteEditorBinding(this.bindingStorage.findEditorBindingBySync(editorSync)!);
-			}
-		}
-	}
+	
 
     private async getOrCreateEditor(buffer : vscode.TextDocument) : Promise<vscode.TextEditor> {
 		if(this.isOpen(buffer.uri)) {

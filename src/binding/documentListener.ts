@@ -15,8 +15,10 @@ export class DocumentListener implements IDocumentListener{
     }
 
     public onDidChangeTextDocument (event : vscode.TextDocumentChangeEvent) {
+		console.log("Handling change event: "+event);
 		const bufferBinding = this.bindingStorage.findBufferBindingByBuffer(event.document);
 		if (bufferBinding) {
+			console.log("Calling binding for change event: "+event);
 			bufferBinding.onDidChangeBuffer(event.contentChanges);
 		}
 	}
