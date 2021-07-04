@@ -8,9 +8,11 @@ import * as uuid from 'uuid';
 import { RemoteSelection } from "./remoteSelection";
 import { YTransactionBasedSync } from "./yTransactionBasedSync";
 import * as vscode from 'vscode';
+import { CyclicExecutor } from "../../base/cyclicExecutor";
 
 
 const noneUri = vscode.Uri.parse("none://");
+const timeout = 30*1000;
 
 type PeerAndKey = {
     peer : string, 
@@ -24,6 +26,9 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     private peers : Y.Map<Y.Map<Y.Map<any>>>;
     private editorSyncsByPeerAndFile = new Map<string,Map<string, YEditorSync>>();
     private peerAndKeyByEditorSync = new Map<IEditorSync, PeerAndKey>();
+    private me = new Y.Map<Y.Map<any>>();
+    private timedOutPeers = new Set<string>();
+    
 
     private cleanupHandlers : (() => void)[] = [];
 
@@ -31,7 +36,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         super(doc, uuid.v4());
         console.debug("Starting YSyncPortal "+this.localPeer);
         this.peers = doc.getMap("peers");
-        this.peers.set(this.localPeer, new Y.Map<Y.Map<any>>());
+        this.peers.set(this.localPeer, this.me);
         for(let peer of this.peers.keys()) {
             this.onPeerAdded(peer, this.peers.get(peer)!);
         }
@@ -40,6 +45,8 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         this.cleanupHandlers.push(() => {
             this.peers.unobserve(observer);
         });
+
+        new CyclicExecutor().executeCyclic(this.handleKeepAlive.bind(this), 300);
     }
 
     isHost(): boolean {
@@ -69,14 +76,19 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     private onPeerAdded(peer : string, files : Y.Map<Y.Map<any>>) {
         console.debug("Adding peer "+peer);
         
-        this.executeOnListener(async (listener) => {
-            listener.onPeerJoined(peer);
-        });
-
-        for(let fileName of files.keys()) {
-            this.onFileAdded(peer, fileName, files.get(fileName)!);
+        if(peer === this.localPeer) {
+            console.debug("Added myself, not doing anything");
         }
-        this.addObserverForFileList(peer, files);
+        else {
+            this.executeOnListener(async (listener) => {
+                listener.onPeerJoined(peer);
+            });
+    
+            for(let fileName of files.keys()) {
+                this.onFileAdded(peer, fileName, files.get(fileName)!);
+            }
+            this.addObserverForFileList(peer, files);
+        }
     }
 
     private addObserverForFileList(peer: string, files: Y.Map<Y.Map<any>>) {
@@ -92,14 +104,44 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     private onPeerDeleted(peer : string) {
         console.debug("Deleting peer "+peer);
 
-        this.executeOnListener(async (listener) => {
-            listener.onPeerLeft(peer);
-        });
+        if(peer === this.localPeer) {
+            console.debug("Someone unjustly removed me, restoring peer settings for myself");
+            this.peers.set(this.localPeer, this.me);
+        }
+        else {
+            this.executeOnListener(async (listener) => {
+                listener.onPeerLeft(peer);
+            });
+    
+            let peerFiles = this.editorSyncsByPeerAndFile.get(peer);
+            if(peerFiles) {
+                for(let fileName of peerFiles.keys()) {
+                    this.onFileDeleted(peer, fileName);
+                }
+            }
+        }
+        
+    }
 
-        let peerFiles = this.editorSyncsByPeerAndFile.get(peer);
-        if(peerFiles) {
-            for(let fileName of peerFiles.keys()) {
-                this.onFileDeleted(peer, fileName);
+    private async handleKeepAlive() {
+        let alive = this.doc.getMap("alivePeers");
+        alive.set(this.localPeer, Date.now());
+
+        for(let peer of this.peers.keys()) {
+            let alivePeer = alive.get(peer);
+            if(!alivePeer || Date.now() - alivePeer > timeout) {
+                if(!this.timedOutPeers.has(peer)) {
+                    this.timedOutPeers.add(peer);
+                    this.onPeerDeleted(peer);
+                }
+            }
+        }
+
+        for(let peer of this.timedOutPeers) {
+            let alivePeer = alive.get(peer);
+            if(alivePeer && Date.now() - alivePeer <= timeout) {
+                this.timedOutPeers.delete(peer);
+                this.onPeerAdded(peer, this.peers.get(peer)!);
             }
         }
     }
@@ -203,10 +245,10 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
                 console.debug("Sending file closure to remote "+peerAndKey.key+"@"+peerAndKey.peer);
                 this.peerAndKeyByEditorSync.delete(editorSync);
                 this.editorSyncsByPeerAndFile.get(peerAndKey.peer)?.delete(peerAndKey.key);
-                let files = this.peers.get(peerAndKey.peer);
-                if(files) {
-                    files.delete(peerAndKey.key);
+                if(peerAndKey.peer === this.localPeer) {
+                    this.me.delete(peerAndKey.key);
                 }
+                
             }
         });
     }
@@ -215,7 +257,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         console.debug("Syncing local file "+fileid+"@"+this.localPeer+" to remote");
         let remoteFile = new RemoteFile(this.localPeer,fileid,new Y.Array<RemoteSelection>(), new Y.Text(), false);
         this.transact(() => {
-            this.peers.get(this.localPeer)!.set(fileid, remoteFile);
+            this.me.set(fileid, remoteFile);
         });
         return Promise.resolve(this.forceNewEditorSync(this.localPeer, fileid, remoteFile));
     }
