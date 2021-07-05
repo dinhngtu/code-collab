@@ -38,7 +38,7 @@ export class MultiConnector extends BaseConnector implements IConnector{
         }
     }
 
-    override async disconnect(connection : SyncConnection) : Promise<void> {
+    async disconnect(connection : SyncConnection) : Promise<void> {
         await super.disconnect(connection);
         await this.connectorByConnection.get(connection)?.disconnect(connection);
     }

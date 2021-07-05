@@ -50,11 +50,9 @@ export class EditorManager implements IEditorManager {
 		if(event) {
 			this.setEditorAsOpen(event);
 	
-			if(event.document.uri.scheme === "file") {
-				this.executeOnListeners((listener) => {
-					listener.onLocalFileOpened(event);
-				});
-			}
+			this.executeOnListeners((listener) => {
+				listener.onLocalFileOpened(event);
+			});
 		}
 	}
 
@@ -65,6 +63,12 @@ export class EditorManager implements IEditorManager {
 				let buffer = editor.document;
 				this.openEditors.delete(buffer.uri.fsPath);
 				this.bindingStorage.deleteEditorBinding(this.bindingStorage.findEditorBindingBySync(editorSync)!);
+			}
+		}
+
+		for(let uri of this.openEditors.keys()) {
+			if(!editors.includes(this.openEditors.get(uri)!)) {
+				this.openEditors.delete(uri);
 			}
 		}
 	}

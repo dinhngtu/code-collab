@@ -55,7 +55,7 @@ export class YJSConnector extends BaseConnector implements IConnector {
         }
     }
 
-    override async disconnect(connection : SyncConnection) {
+    async disconnect(connection : SyncConnection) {
         await super.disconnect(connection);
         var connections = this.retrieveConnections();
         for(let existing of connections) {

@@ -54,6 +54,7 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
 		let editorProxy = this.portal.createEditorProxy({bufferProxy});
         let editorSync = new TeletypeEditorSync(this.portal, editorProxy,this);
         this.syncsByProxy.set(editorProxy, editorSync);
+        this.activateFileToRemote(editorSync);
         return Promise.resolve(editorSync);
     }
 
@@ -74,8 +75,7 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
             let uniquePath = this.getUniquePath(editorProxy);
             if(this.syncsByProxy.has(editorProxy)) {
                 this.executeOnListener(async (listener) => {
-                    await listener.onOpenRemoteFile("host", uniquePath, noneUri, this.syncsByProxy.get(editorProxy)!);
-                    await listener.onActivateRemoveFile(this.syncsByProxy.get(editorProxy)!);
+                   await listener.onActivateRemoveFile(this.syncsByProxy.get(editorProxy)!);
                 });
             } else {
                 let editorSync = new TeletypeEditorSync(this.portal,editorProxy,this);

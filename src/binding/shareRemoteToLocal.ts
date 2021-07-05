@@ -13,8 +13,9 @@ import { IShareRemoteToLocal } from "./iShareRemoteToLocal";
 import { IEditorBindingFactory } from "./iEdtorBindingFactory";
 import { IEditorManager } from "./iEditorManager";
 import { IRemoteFileManagementListener } from "./iRemoteFileManagementListener";
+import { IWorkspaceEventListener } from "./iWorkspaceEventListener";
 
-export class ShareRemoteToLocal extends DelayedListenerExecution<IRemoteFileManagementListener> implements IRemoteFileListener, IShareRemoteToLocal{
+export class ShareRemoteToLocal extends DelayedListenerExecution<IRemoteFileManagementListener> implements IRemoteFileListener, IShareRemoteToLocal, IWorkspaceEventListener{
 
 	private remoteFileEntryBySync = new Map<BufferBinding, RemoteFileEntry>();
 	private filesByPeer = new Map<string, RemoteFileEntry[]>();
@@ -22,7 +23,9 @@ export class ShareRemoteToLocal extends DelayedListenerExecution<IRemoteFileMana
 
     constructor(private bindingStorage : IBindingStorage, private editorManager : IEditorManager, private bufferBindingFactory : IBufferBindingFactory, private editorBindingFactory : IEditorBindingFactory) {
         super();
+		this.editorManager.addListener(this);
     }
+	
 
 
     async onOpenRemoteFile(peer: string, uniqueUri: string, localUri : vscode.Uri, editorSync: IEditorSync): Promise<void> {
@@ -54,6 +57,26 @@ export class ShareRemoteToLocal extends DelayedListenerExecution<IRemoteFileMana
 			return this.filesByPeer.get(peer)!;
 		}
 		return [];
+	}
+
+	onLocalFileOpened(editor: vscode.TextEditor): void {
+		let buffer = editor.document;
+		let bufferBinding = this.bindingStorage.findBufferBindingByBuffer(buffer);
+		if(bufferBinding && this.peersByFile.has(bufferBinding)) {
+			bufferBinding.editor = editor;
+			let remoteFile = this.remoteFileEntryBySync.get(bufferBinding);
+			if(remoteFile) {
+				let editorBinding = this.bindingStorage.findEditorBindingBySync(remoteFile.editorSync);
+				if(editorBinding) {
+					editorBinding.editor = editor;
+					this.bindingStorage.deleteEditorBinding(editorBinding);
+					this.bindingStorage.storeEditorBinding(editorBinding);
+				} else {
+					this.registerNewBindingForEditorAndSync(editor, remoteFile.editorSync);
+				}
+			}
+			
+		}
 	}
 
 	private registerNewBindingForEditorAndSync(editor: vscode.TextEditor, editorSync: IEditorSync) {

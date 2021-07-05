@@ -15,7 +15,7 @@ export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventL
     constructor(private documentListener : IDocumentListener,  private editorManager : IEditorManager, 
 		private bindingStorage : IBindingStorage, private bufferBindingFactory : IBufferBindingFactory, 
 		private editorBindingFactory : IEditorBindingFactory,  private syncPortal : ISyncPortal) {
-
+			this.editorManager.addListener(this);
     }
     
     isShared(uri: vscode.Uri): boolean {
@@ -49,7 +49,13 @@ export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventL
         let sharedFile = this.sharedFiles.get(editor.document.uri.fsPath);
         if(sharedFile) {
             sharedFile.bufferBinding.editor = editor;
-            let editorBinding = this.editorBindingFactory.createBinding(editor, sharedFile.editorSync);
+			var editorBinding = this.bindingStorage.findEditorBindingBySync(sharedFile.editorSync);
+			if(!editorBinding) {
+				editorBinding = this.editorBindingFactory.createBinding(editor, sharedFile.editorSync);
+			} else {
+				editorBinding.editor = editor;
+				this.bindingStorage.deleteEditorBinding(editorBinding);
+			}
             this.bindingStorage.storeEditorBinding(editorBinding);
         }   
     }

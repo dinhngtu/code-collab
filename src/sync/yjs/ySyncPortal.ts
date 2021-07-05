@@ -28,9 +28,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     private peerAndKeyByEditorSync = new Map<IEditorSync, PeerAndKey>();
     private me = new Y.Map<Y.Map<any>>();
     private timedOutPeers = new Set<string>();
-    
-
-    private cleanupHandlers : (() => void)[] = [];
+    private observers = new Map<Y.AbstractType<any>, any>();
 
     constructor(public doc : Y.Doc) {
         super(doc, uuid.v4());
@@ -42,9 +40,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         }
         let observer = this.guard(this.onPeerEvent.bind(this));
         this.peers.observe(observer);
-        this.cleanupHandlers.push(() => {
-            this.peers.unobserve(observer);
-        });
+        this.observers.set(this.peers,observer);
 
         new CyclicExecutor().executeCyclic(this.handleKeepAlive.bind(this), 300);
     }
@@ -92,13 +88,16 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     }
 
     private addObserverForFileList(peer: string, files: Y.Map<Y.Map<any>>) {
+        let observerId = uuid.v4();
         let observer = this.guard((event: Y.YMapEvent<Y.Map<any>>) => {
+            console.log("Observe from id "+observerId);
             this.onFilesChanged(peer, event);
         });
+        if(this.observers.has(files)) {
+            files.unobserve(this.observers.get(files));
+        }
         files.observe(observer);
-        this.cleanupHandlers.push(() => {
-            files.unobserve(observer);
-        });
+        this.observers.set(files,observer);
     }
 
     private onPeerDeleted(peer : string) {
@@ -176,10 +175,11 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         let observer = this.guard((event : Y.YMapEvent<any>) => {
             this.onRemoteDocumentChanged(peer, key, event);
         });
+        if(this.observers.has(file)) {
+            file.unobserve(this.observers.get(file));
+        }
         file.observe(observer);
-        this.cleanupHandlers.push(() => {
-            file.unobserve(observer);
-        });
+        this.observers.set(file,observer);
     }
 
     private async onFileDeleted(peer : string, key : string) {
@@ -280,8 +280,8 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     close(): void {
         console.debug("Closing portal "+this.localPeer);
-        for(let cleanup of this.cleanupHandlers) {
-            cleanup();
+        for(let observable of this.observers.keys()) {
+            observable.unobserve(this.observers.get(observable));
         }
         this.peers.delete(this.localPeer);
     }

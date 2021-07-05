@@ -33,6 +33,6 @@ export function unfakeWindow() {
 export function removeValueFromArray<T>(array : T[], value : T) {
     let index = array.indexOf(value);
     if(index>=0) {
-        array.splice(index);
+        array.splice(index,1);
     }
 }

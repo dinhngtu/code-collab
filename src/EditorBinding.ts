@@ -30,6 +30,7 @@ export default class EditorBinding implements IEditorListener{
 	}
 
 	onSelectionsChangedForPeer(peerid : string, selections : Selection[]) : Promise<void> {
+		console.log("Remote selections changed");
 		let selectionRanges: vscode.Range[] = [];
 		let cursorRanges: vscode.Range[] = [];
 
