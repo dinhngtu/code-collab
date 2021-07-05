@@ -35,7 +35,7 @@ export class SyncConnection {
     public portalListener : IPortalListener = new PortalListener(this.shareRemoteToLocal, this.peerManager, this.syncPortal);
     public editorListener : EditorListener = new EditorListener(this.bindingStorage);
 
-    constructor(private extensionContext : ExtensionContext, private syncPortal : ISyncPortal, private name : string) {
+    constructor(private extensionContext : ExtensionContext, public syncPortal : ISyncPortal, private name : string) {
 
     }
 

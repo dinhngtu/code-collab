@@ -39,17 +39,19 @@ suite("YSyncPortal", function () {
     });
 
     test("Test syncFileToLocal", async function() {
-        doc.getMap("peers").get(syncPortal.localPeer)!.set("test.txt",new RemoteFile("234", "test.txt",new Y.Array<RemoteSelection>(), new Y.Text(), true, new Y.Array<string>()));
+        doc.getMap("peers").set("234", new Y.Map<any>());
+        doc.getMap("peers").get("234")!.set("test.txt",new RemoteFile("234", "test.txt",new Y.Array<RemoteSelection>(), new Y.Text(), true, new Y.Array<string>()));
         await sleep(20);
-        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything(),anything())).once();
+        verify(listenerClass.onOpenRemoteFile(strictEqual("234"),strictEqual("test.txt"), anything(),anything())).once();
         verify(listenerClass.onActivateRemoveFile(anything())).once();
     
     });
 
     test("Test activateFileToLocal", function() {
         let file = new RemoteFile("234", "test.txt",new Y.Array<RemoteSelection>(), new Y.Text(), false, new Y.Array<string>());
-        doc.getMap("peers").get(syncPortal.localPeer)!.set("test.txt",file);
-        verify(listenerClass.onOpenRemoteFile(strictEqual(syncPortal.localPeer),strictEqual("test.txt"), anything(),anything())).once();
+        doc.getMap("peers").set("234", new Y.Map<any>());
+        doc.getMap("peers").get("234")!.set("test.txt",file);
+        verify(listenerClass.onOpenRemoteFile(strictEqual("234"),strictEqual("test.txt"), anything(),anything())).once();
         verify(listenerClass.onActivateRemoveFile(anything())).never();
         file.isActive = true;
         verify(listenerClass.onActivateRemoveFile(anything())).once();

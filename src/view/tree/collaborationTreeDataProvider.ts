@@ -31,6 +31,10 @@ export class CollaborationTreeDataProvider implements vscode.TreeDataProvider<IC
         connection.peerManager.setListener(this);
         this._onDidChangeTreeData.fire(undefined);
     }
+
+    onConnectionRemoved(_: SyncConnection): void {
+        this._onDidChangeTreeData.fire(undefined);
+    }
     
     onDidChangeTreeData: vscode.Event<ICollaborationTreeElement | null | undefined> = this._onDidChangeTreeData.event;
     

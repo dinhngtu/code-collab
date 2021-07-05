@@ -30,6 +30,14 @@
 				}
 			},
 			{
+				"title" : "Remove Collaboration Connection",
+				"command" : "extension.removeCollabConnection",
+				"icon": {
+					"light": "resources/light/delete.svg",
+					"dark": "resources/dark/delete.svg"
+				}
+			},
+			{
 				"title" : "Share via Collaboration",
 				"command" : "extension.shareItem"
 			},
@@ -51,6 +59,11 @@
 				{
 					"command": "extension.addCollabConnection",
 					"when": "view == extension.collaboration && viewItem == connections",
+					"group": "inline"
+				},
+				{
+					"command": "extension.removeCollabConnection",
+					"when": "view == extension.collaboration && viewItem == connection",
 					"group": "inline"
 				}
 			], 

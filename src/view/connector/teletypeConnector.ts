@@ -8,6 +8,7 @@ import { fakeWindow } from "../../base/functions";
 import { IColorManager } from "../../color/iColorManager";
 import { ExtensionContext } from "../../extensionContext";
 import { input } from "../base/viewFunctions";
+import { SyncConnection } from "../../binding/syncConnection";
 
 export class TeletypeConnection {
     public url = 'https://api.teletype.atom.io';
@@ -23,13 +24,13 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
         super(extensionContext);
     }
 
-    async newConnection(): Promise<void> {
+    async newConnection(): Promise<SyncConnection> {
 
         fakeWindow();
 
         let client = await this.inputConnection();
 
-        await this.connectToPortal(client);
+        return await this.connectToPortal(client);
         
     }
 
@@ -44,7 +45,7 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
             portal = await this.joinPortal(client);
             host = false;
         }
-        this.addConnection(portal.id, new TeletypeSyncPortal(portal));
+        return this.addConnection(portal.id, new TeletypeSyncPortal(portal));
     }
 
     private async joinPortal(client: TeletypeClient) {
@@ -126,6 +127,11 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
 
     getName(): string {
         return "Teletype";
+    }
+
+
+    async restoreConnections(): Promise<void> {
+        console.debug("Not restoring teletype connections, as teletype portals are not persisted on the server side if the client disconnects");
     }
 
 }
