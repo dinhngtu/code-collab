@@ -10,38 +10,49 @@ import * as vscode from 'vscode';
 
 suite("TeletypeSyncPortal", function () {
 
-    let portalClass = mock(Portal);
-    let bufferProxyClass = mock(BufferProxy);
-    let listenerClass = mock<IPortalListener>();
-    let editorProxyClass = mock(EditorProxy);
+    var portalClass : Portal;
+    var bufferProxyClass : BufferProxy;
+    var listenerClass : IPortalListener;
+    var editorProxyClass : EditorProxy;
+    var portal : Portal;
+    var bufferProxy : BufferProxy;
+    var listener : IPortalListener;
+    var editorProxy : EditorProxy;
 
-    let portal = instance(portalClass);
-    let bufferProxy = instance(bufferProxyClass);
-    let listener = instance(listenerClass);
-    when(portalClass.getSiteIdentity(1234)).thenReturn({login: "1234"});
-    when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything(), anything())).thenReturn(Promise.resolve());
-    when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
+    
 
-    let editorProxy = instance(editorProxyClass);
-    (editorProxy as any).bufferProxy = bufferProxy;
+    var portalSync : TeletypeSyncPortal;
 
-    when(portalClass.createBufferProxy(anything())).thenReturn(bufferProxy);
-    when(portalClass.createEditorProxy(anything())).thenReturn(editorProxy);
+    setup(async function() {
+        portalClass = mock(Portal);
+        bufferProxyClass = mock(BufferProxy);
+        listenerClass = mock<IPortalListener>();
+        editorProxyClass = mock(EditorProxy);
+        portal = instance(portalClass);
+        bufferProxy = instance(bufferProxyClass);
+        listener = instance(listenerClass);
+        when(portalClass.getSiteIdentity(1234)).thenReturn({login: "1234"});
+        when(listenerClass.onOpenRemoteFile(anyString(), anyString(), anything(), anything())).thenReturn(Promise.resolve());
+        when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
 
-    let portalSync = new TeletypeSyncPortal(portal);
-    portalSync.setListener(listener);
+        editorProxy = instance(editorProxyClass);
+        (editorProxy as any).bufferProxy = bufferProxy;
 
-    suiteSetup(async function() {
-        await portalSync.syncLocalFileToRemote("test.txt");
+        when(portalClass.createBufferProxy(anything())).thenReturn(bufferProxy);
+        when(portalClass.createEditorProxy(anything())).thenReturn(editorProxy);
+        portalSync = new TeletypeSyncPortal(portal);
+        portalSync.setListener(listener);
     });
 
-    test("Test syncFileToLocal", function() {
+    test("Test syncFileToLocal", async function() {
+        await portalSync.syncLocalFileToRemote("test.txt");
         verify(portalClass.createBufferProxy(deepEqual({uri: "test.txt"}))).once();
         verify(portalClass.createEditorProxy(deepEqual({bufferProxy}))).once();
     });
 
 
-    test("Test close", function() {
+    test("Test close", async function() {
+        await portalSync.syncLocalFileToRemote("test.txt");
         portalSync.close();
         verify(portalClass.dispose()).once();
         verify(editorProxyClass.dispose()).once();
@@ -74,22 +85,21 @@ suite("TeletypeSyncPortal", function () {
     
     test("Test tether with new and existing proxy", async function() {
         let newProxy = instance(editorProxyClass);
-        (newProxy as any).bufferProxy = {
-            uri: "abc"
-        };
+        (newProxy as any).bufferProxy =  bufferProxyClass;
+        (newProxy as any).bufferProxy.uri= "abc";
         (portal as any).id = "123";
         var editorSync : IEditorSync | null = null;
         when(listenerClass.onOpenRemoteFile(strictEqual("host"),strictEqual("/123/abc"), anything(), anything())).thenCall((peer: string, url: string,uri: vscode.Uri, sync : IEditorSync) => {
             editorSync = sync;
         });
-        portalSync.updateTether(null,newProxy,null);
+        await portalSync.updateTether(null,newProxy,null);
         await sleep(20);
         assert.ok(editorSync);
         verify(listenerClass.onOpenRemoteFile("host","/123/abc",anything(), editorSync)).once();
         verify(listenerClass.onActivateRemoveFile(editorSync)).once();
         portalSync.updateTether(null,newProxy,null);
         await sleep(20);
-        verify(listenerClass.onOpenRemoteFile("host","/123/abc",anything(), editorSync)).twice();
+        verify(listenerClass.onOpenRemoteFile("host","/123/abc",anything(), editorSync)).once();
         verify(listenerClass.onActivateRemoveFile(editorSync)).twice();
     });
 
