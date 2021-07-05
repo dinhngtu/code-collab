@@ -4,15 +4,16 @@ import { IEditorSync } from "../iEditorSync";
 import { EditorProxy, Portal } from '@atom/teletype-client';
 import { SelectionMap, Selection as TeletypeSelection, Range } from './types/teletype_types';
 import { IBufferSync } from "../iBufferSync";
-import { IBufferListener } from "../iBufferListener";
 import { TeletypeBufferSync } from "./teletypeBufferSync";
 import { DelayedListenerExecution } from "./delayedListenerExecution";
+import { TeletypeSyncPortal } from "./teletypeSyncPortal";
 
 export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener> implements IEditorSync{
 
+    private disposed : boolean = false;
     private bufferSync : IBufferSync;
 
-    constructor(public editorProxy : EditorProxy) {
+    constructor(public portal : Portal, public editorProxy : EditorProxy, public parent : TeletypeSyncPortal) {
         super();
         this.editorProxy.setDelegate(this);
         this.bufferSync = new TeletypeBufferSync((this.editorProxy as any).bufferProxy);
@@ -48,9 +49,13 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
 	}
 
     dispose() {
-        this.executeOnListener((listener) => {
-            listener.dispose();
-        });
+        if(!this.disposed) {
+            this.disposed = true;
+            this.parent.onRemoteFileClosed(this);
+            this.executeOnListener(async (listener) => {
+                listener.dispose();
+            });
+        }
 	}
 
     updateSelectionsForSiteId(siteId: number, selectionUpdates: SelectionMap) {
@@ -62,23 +67,23 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
                     let cursorRange = this.getCursorRangeFromSelection(selectionUpdate);
                     selections.push(new Selection(selectionId, cursorRange.start, cursorRange.end, false, true));
                 }
-                selections.push(new Selection(selectionId, selectionUpdate.range.start, selectionUpdate.range.end, selectionUpdate.reversed, this.isCursor(selectionUpdate)))
+                selections.push(new Selection(selectionId, selectionUpdate.range.start, selectionUpdate.range.end, selectionUpdate.reversed, this.isCursor(selectionUpdate)));
             }
         }
-        this.executeOnListener((listener) => {
-            listener.onSelectionsChangedForPeer(""+siteId, selections);
+        this.executeOnListener(async (listener) => {
+            listener.onSelectionsChangedForPeer(this.getSiteId(siteId), selections);
         });
 	}
 
     clearSelectionsForSiteId(siteId: number) {
-        this.executeOnListener((listener) => {
-            listener.onSelectionsChangedForPeer(""+siteId, []);
+        this.executeOnListener(async (listener) => {
+            listener.onSelectionsChangedForPeer(this.getSiteId(siteId), []);
         });
     }
     
     private isCursor(selectionUpdate: TeletypeSelection): boolean {
-        return selectionUpdate.range.start.column == selectionUpdate.range.end.column && 
-            selectionUpdate.range.start.row == selectionUpdate.range.end.row;
+        return selectionUpdate.range.start.column === selectionUpdate.range.end.column && 
+            selectionUpdate.range.start.row === selectionUpdate.range.end.row;
     }
 
     private getCursorRangeFromSelection(selection: TeletypeSelection): Range {
@@ -95,5 +100,13 @@ export class TeletypeEditorSync extends DelayedListenerExecution<IEditorListener
 			};
 		}
 	}
+
+    private getSiteId(siteId : number) : string {
+        if(siteId === 1) {
+            return "host";
+        } else {
+            return this.portal.getSiteIdentity(siteId).login;
+        }
+    }
 
 }

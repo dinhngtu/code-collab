@@ -1,9 +1,12 @@
-import { BufferProxy, EditorProxy, Portal } from "@atom/teletype-client";
+import { EditorProxy, Portal } from "@atom/teletype-client";
 import { IEditorSync } from "../iEditorSync";
 import { IPortalListener } from "../iPortalListener";
 import { ISyncPortal } from "../iSyncPortal";
 import { DelayedListenerExecution } from "./delayedListenerExecution";
 import { TeletypeEditorSync } from "./teletypeEditorSync";
+import * as vscode from 'vscode';
+
+const noneUri = vscode.Uri.parse("none://");
 
 export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener> implements ISyncPortal {
 
@@ -12,6 +15,31 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     constructor(public portal : Portal) {
         super();
         this.portal.setDelegate(this);
+        if(!portal.isHost) {
+            this.executeOnListener(async (listener) => {
+                listener.onPeerJoined("host");
+            });
+        }
+    }
+
+    isHost(): boolean {
+        return this.portal.isHost;
+    }
+
+    getType(): string {
+        return "Teletype";
+    }
+
+    async closeFileToRemote(editorSync: IEditorSync): Promise<void> {
+        editorSync.close();
+    }
+
+    onRemoteFileClosed(sync: TeletypeEditorSync) {
+        if(!this.portal.isHost) {
+            this.executeOnListener(async (listener) => {
+                await listener.onCloseRemoteFile(sync);
+            });    
+        }
     }
     
     close(): void {
@@ -22,10 +50,11 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     }
 
     syncLocalFileToRemote(fileid: string): Promise<IEditorSync> {
-        let bufferProxy = this.portal.createBufferProxy();
+        let bufferProxy = this.portal.createBufferProxy({uri: fileid});
 		let editorProxy = this.portal.createEditorProxy({bufferProxy});
-        let editorSync = new TeletypeEditorSync(editorProxy);
+        let editorSync = new TeletypeEditorSync(this.portal, editorProxy,this);
         this.syncsByProxy.set(editorProxy, editorSync);
+        this.activateFileToRemote(editorSync);
         return Promise.resolve(editorSync);
     }
 
@@ -36,34 +65,41 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
     }
 
     dispose() {
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.dispose();
         });
     }
 
-    async updateTether(state: any, editorProxy: any, position: any) {
+    async updateTether(state: any, editorProxy: EditorProxy | null, position: any) {
 		if (editorProxy) {
-            let uniquePath = "/"+(this.portal as any).id+"/"+(editorProxy as any).bufferProxy.uri;
+            let uniquePath = this.getUniquePath(editorProxy);
             if(this.syncsByProxy.has(editorProxy)) {
-                this.executeOnListener((listener) => {
-                    listener.onOpenRemoteFile(uniquePath, this.syncsByProxy.get(editorProxy)!);
+                this.executeOnListener(async (listener) => {
+                   await listener.onActivateRemoveFile(this.syncsByProxy.get(editorProxy)!);
                 });
             } else {
-                let editorSync = new TeletypeEditorSync(editorProxy);
+                let editorSync = new TeletypeEditorSync(this.portal,editorProxy,this);
                 this.syncsByProxy.set(editorProxy, editorSync);
-                this.executeOnListener((listener) => {
-                    listener.onOpenRemoteFile(uniquePath,editorSync);
+                this.executeOnListener(async (listener) => {
+                    await listener.onOpenRemoteFile("host", uniquePath,noneUri,editorSync);
+                    await listener.onActivateRemoveFile(editorSync);
                 });
             }
 		}
 	}
 
+    private getUniquePath(editorProxy: any) {
+        return "/" + (this.portal as any).id + "/" + (editorProxy as any).bufferProxy.uri;
+    }
+
     hostDidClosePortal() {
-		//TODO: implement
+        this.executeOnListener(async (listener) => {
+            listener.onPeerLeft("host");
+        });
 	}
 
     hostDidLoseConnection() {
-		//TODO: implement
+        this.hostDidClosePortal();
 	}
 
     updateActivePositions(positionsBySiteId: any) {
@@ -71,11 +107,15 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
 	}
 
     siteDidJoin(siteId: any) {
-		//TODO: implement
+		this.executeOnListener(async (listener) => {
+            listener.onPeerJoined(this.portal.getSiteIdentity(siteId).login);
+        });
 	}
 
-	siteDidLeave(siteId: never) {
-		//TODO: implement
+	siteDidLeave(siteId: any) {
+		this.executeOnListener(async (listener) => {
+            listener.onPeerLeft(this.portal.getSiteIdentity(siteId).login);
+        });
 	}
 
 	didChangeEditorProxies() { 

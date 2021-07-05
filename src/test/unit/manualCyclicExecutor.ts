@@ -4,7 +4,7 @@ type ScheduledCall = {
     call: () => Promise<void>;
     nextTime: number,
     timeout: number
-}
+};
 
 export class ManualCyclicExecutor implements ICyclicExecutor {
 

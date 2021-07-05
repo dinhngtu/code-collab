@@ -1,4 +1,3 @@
-import { IDisposable } from "../base/iDisposable";
 import { Selection } from "./data/selection";
 import { IBufferSync } from "./iBufferSync";
 import { IEditorListener } from "./iEditorListener";

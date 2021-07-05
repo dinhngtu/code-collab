@@ -6,7 +6,7 @@ class FakeDelayedListenerExecution extends DelayedListenerExecution<any> {
     count : number = 0;
 
     doExecution() {
-        this.executeOnListener((_) => {
+        this.executeOnListener(async (_) => {
             this.count++;
         });
     }

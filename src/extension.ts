@@ -1,128 +1,83 @@
 'use strict';
 
 import * as vscode from 'vscode';
-import { Portal, TeletypeClient } from '@atom/teletype-client';
-import PortalBinding from './PortalBinding';
-import { TeletypeSyncPortal } from './sync/teletype/teletypeSyncPortal';
+import { CollaborationTreeDataProvider } from './view/tree/collaborationTreeDataProvider';
+import { TeletypeConnector } from './view/connector/teletypeConnector';
+import { YJSConnector } from './view/connector/yjsConnector';
+import { MultiConnector } from './view/connector/multiConnector';
+import { PeerFileDecorationProvider } from './view/tree/peerFileDecorationProvider';
+import { ExtensionContext } from './extensionContext';
+import { IEditorSync } from './sync/iEditorSync';
+import { SharingFileDecorationProvider } from './view/sharing/sharingFileDecorationProvider';
+import { FileSharer } from './view/sharing/fileSharer';
+import { SyncConnection } from './binding/syncConnection';
+import { ConnectionTreeElement } from './view/tree/connectionTreeElement';
 
-
-const fetch = require('node-fetch');
-const constants = require('./constants');
-const globalAny: any = global;
-const wrtc = require('wrtc');
-
-globalAny.window = {};
-globalAny.window = global;
-globalAny.window.fetch = fetch;
-globalAny.RTCPeerConnection = wrtc.RTCPeerConnection;
-
-var activePortal : Portal | null = null;
+let extensionContext = ExtensionContext.default();
+let shareProvider = new SharingFileDecorationProvider(extensionContext.connectionManager);
+let fileSharer = new FileSharer(extensionContext.connectionManager, shareProvider);
 
 // this method is called when the extension is activated
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	console.log('Great, your extension "vscode-teletype" is now active!');
-	addJoinCommand(context);
+	
+	context.subscriptions.push(vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true}));
 
-	addCreateCommand(context);
-}
+	vscode.window.registerFileDecorationProvider(new PeerFileDecorationProvider(extensionContext.colorManager));
+	vscode.window.registerFileDecorationProvider(shareProvider);
 
-function addCreateCommand(context: vscode.ExtensionContext) {
-	let createCommand = vscode.commands.registerCommand('extension.create-portal', async () => {
-		await createPortal();
-	});
-	context.subscriptions.push(createCommand);
-}
+	let teletypeConnector = new TeletypeConnector(context.workspaceState, extensionContext);
+	let yjsConnector = new YJSConnector(context.workspaceState, extensionContext);
+	let multiConnector = new MultiConnector(extensionContext, [yjsConnector, teletypeConnector]);
 
-function addJoinCommand(context: vscode.ExtensionContext) {
-	let joinCommand = vscode.commands.registerCommand('extension.join-portal', async () => {
+	vscode.window.registerTreeDataProvider("extension.collaboration", new CollaborationTreeDataProvider(extensionContext.connectionManager));
 
-		let portalIdInput = await getPortalID();
-		if (!portalIdInput) {
-			vscode.window.showInformationMessage("No Portal ID has been entered. Please try again");
-		}
-		else {
-			vscode.window.showInformationMessage('Trying to Join Portal with ID' + ' ' + portalIdInput + ' ');
-			await joinPortal(portalIdInput);
-		}
+	createCommands(multiConnector);
 
-	});
-	context.subscriptions.push(joinCommand);
-}
-
-async function getPortalID() {
-	let portalID = await vscode.window.showInputBox({ prompt: 'Enter ID of the Portal you wish to join' });
-	return portalID;
-}
-
-function closeActivePortal() {
-	if(activePortal != null) {
-		vscode.window.showInformationMessage('Closing Portal with ID' + ' ' + (activePortal as any).id);
-		activePortal.dispose();
-		activePortal = null;
-	}
+	multiConnector.restoreConnections();
 }
 
 
-async function joinPortal(portalId: any) {
-	let client = await getAuthenticatedClient();
-	if(client) {
+function createCommands(multiConnector: MultiConnector) {
+	vscode.commands.registerCommand("extension.addCollabConnection", async () => {
 		try {
-			closeActivePortal();
-			let portal = await client.joinPortal(portalId);
-			activePortal = portal;
-			vscode.window.showInformationMessage('Joined Portal with ID' + ' ' + portalId + ' ');
-			await createBindingForPortal(client, portal, false);
+			await multiConnector.newConnection();
 		} catch (error) {
-			vscode.window.showErrorMessage('Unable to join the Portal with ID' + ' ' + portalId + ' error='+error);
+			await vscode.window.showErrorMessage(error.message);
 		}
-	}	
-}
+	});
 
-async function createPortal() {
-	let client = await getAuthenticatedClient();
-	if(client) {
+	vscode.commands.registerCommand("extension.removeCollabConnection", async (element: ConnectionTreeElement) => {
 		try {
-			closeActivePortal();
-			let portal : any = await client.createPortal();
-			activePortal = portal;
-			vscode.window.showInputBox({ prompt: 'Created portal with ID', value: portal.id});
-			await createBindingForPortal(client, portal, true);
+			extensionContext.connectionManager.remove(element.connection);
 		} catch (error) {
-			vscode.window.showErrorMessage('Unable to create a Portal with ID error='+error);
+			await vscode.window.showErrorMessage(error.message);
 		}
-	}
-}
+	});
 
-async function createBindingForPortal(client: TeletypeClient, portal: Portal, isHost : boolean) {
-	let portal_binding = new PortalBinding(new TeletypeSyncPortal(portal), isHost);
-	await portal_binding.initialize();
-}
+	vscode.commands.registerCommand("extension.openCollabFile", (syncConnection: SyncConnection, editorSync: IEditorSync) => {
+		syncConnection.shareRemoteToLocal.activateRemoteFile(editorSync);
+	});
 
-async function getAuthenticatedClient() {
-	if (constants.AUTH_TOKEN !== '') {
+	vscode.commands.registerCommand("extension.shareItem", async (uri: vscode.Uri) => {
 		try {
-			let client = new TeletypeClient({
-				pusherKey: constants.PUSHER_KEY,
-				pusherOptions: {
-					cluster: constants.PUSHER_CLUSTER
-				},
-				baseURL: constants.API_URL_BASE,
-			}
-			);
-
-			await client.initialize();
-			await client.signIn(constants.AUTH_TOKEN);
-			return client;
-		} catch (e) {
-			console.log("Exception Error Message " + e);
+			await fileSharer.shareFile(uri);
+		} catch (error) {
+			await vscode.window.showErrorMessage(error.message);
 		}
-	}
-	else {
-		vscode.window.showErrorMessage("GitHub Auth Token. Please provide it in the constants.ts file");
-	}
-	return null;
+	});
+
+	vscode.commands.registerCommand("extension.unshareItem", async (uri: vscode.Uri) => {
+		try {
+			await fileSharer.unshareFile(uri);
+		} catch (error) {
+			await vscode.window.showErrorMessage(error.message);
+		}
+	});
 }
 
-export function deactivate() { }
+export function deactivate() { 
+	extensionContext.connectionManager.dispose();
+}

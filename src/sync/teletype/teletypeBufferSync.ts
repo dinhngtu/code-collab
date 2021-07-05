@@ -6,6 +6,7 @@ import { DelayedListenerExecution } from "./delayedListenerExecution";
 
 export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener> implements IBufferSync {
 
+    
     constructor(public bufferProxy : BufferProxy) {
         super();
         this.bufferProxy.setDelegate(this);
@@ -26,13 +27,13 @@ export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener
 
     
 	dispose() {
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.dispose();
         });
 	}
 
     setText(text: string) {
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.onSetText(text);
         });
 	}
@@ -42,17 +43,17 @@ export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener
         for(let textUpdate of textUpdates) {
             textChanges.push(new TextChange(this.getChangeType(textUpdate), textUpdate.oldStart, textUpdate.oldEnd, textUpdate.newText));
         }
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.onTextChanges(textChanges);
         });
 	}
 
     getChangeType(textUpdate: any): TextChangeType {
-        if(textUpdate.oldStart.row ==  textUpdate.oldEnd.row &&
-            textUpdate.oldStart.column == textUpdate.oldEnd.column) {
+        if(textUpdate.oldStart.row ===  textUpdate.oldEnd.row &&
+            textUpdate.oldStart.column === textUpdate.oldEnd.column) {
             return TextChangeType.INSERT;
         } else {
-            if(textUpdate.newText == "") {
+            if(textUpdate.newText === "") {
                 return TextChangeType.DELETE;
             } else {
                 return TextChangeType.UPDATE;
@@ -61,7 +62,7 @@ export class TeletypeBufferSync extends DelayedListenerExecution<IBufferListener
     }
 
     save() {
-        this.executeOnListener((listener) => {
+        this.executeOnListener(async (listener) => {
             listener.onSave();
         });
 	}

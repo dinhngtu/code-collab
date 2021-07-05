@@ -67,6 +67,7 @@ declare module '@atom/teletype-client' {
     }
 
     export class EditorProxy {
+        siteId : string;
         constructor(...args: any[]);
 
         bufferProxyDidUpdateMarkers(...args: any[]): void;
@@ -249,6 +250,11 @@ declare module '@atom/teletype-client' {
     }
 
     export class Portal {
+
+        public id : string;
+
+        public isHost : boolean;
+
         constructor(...args: any[]);
 
         activateEditorProxy(...args: any[]): void;
@@ -261,7 +267,7 @@ declare module '@atom/teletype-client' {
 
         activeEditorDidUpdateText(...args: any[]): void;
 
-        activeEditorProxyForSiteId(...args: any[]): void;
+        activeEditorProxyForSiteId(...args: any[]): EditorProxy;
 
         assignNewSiteId(...args: any[]): void;
 
@@ -271,7 +277,7 @@ declare module '@atom/teletype-client' {
 
         broadcastEditorProxySwitch(...args: any[]): void;
 
-        createBufferProxy(...args: any[]): BufferProxy;
+        createBufferProxy(props: {uri : string}): BufferProxy;
 
         createEditorProxy(...args: any[]): EditorProxy;
 
@@ -299,7 +305,7 @@ declare module '@atom/teletype-client' {
 
         getActiveSiteIds(...args: any[]): void;
 
-        getEditorProxiesMetadata(...args: any[]): void;
+        getEditorProxiesMetadata(...args: any[]): EditorProxyMetadata[];
 
         getEditorProxyMetadata(...args: any[]): void;
 
@@ -307,7 +313,7 @@ declare module '@atom/teletype-client' {
 
         getLocalActiveEditorProxy(...args: any[]): void;
 
-        getLocalSiteId(...args: any[]): void;
+        getLocalSiteId(...args: any[]): number;
 
         getSiteIdentity(...args: any[]): any;
 
@@ -482,7 +488,7 @@ declare module '@atom/teletype-client' {
     export class TeletypeClient {
         constructor(...args: any[]);
 
-        createPortal(...args: any[]): void;
+        createPortal(...args: any[]): Promise<Portal>;
 
         dispose(...args: any[]): void;
 
@@ -494,7 +500,7 @@ declare module '@atom/teletype-client' {
 
         isSignedIn(...args: any[]): void;
 
-        joinPortal(...args: any[]): Portal;
+        joinPortal(portalId : string): Portal;
 
         onConnectionError(...args: any[]): void;
 

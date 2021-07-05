@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [10.x]
+        node-version: [12.x]
     
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -38,4 +38,4 @@ jobs:
         with:
           name: vsix-file
           path: "*.vsix"
-#        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/')

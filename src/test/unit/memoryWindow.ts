@@ -29,6 +29,7 @@ export class MemoryWindow {
 
     async showTextDocument(buffer : vscode.TextDocument) {
         let editor = new MemoryEditor();
+        editor.document = buffer;
         this.createdTextEditors.set(buffer,editor);
         return editor;
     }

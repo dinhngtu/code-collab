@@ -5,20 +5,21 @@ import { Position } from '../../sync/data/position';
 import EditorBinding from '../../EditorBinding';
 import { IEditorSync } from '../../sync/iEditorSync';
 import { Selection } from '../../sync/data/selection';
+import { ColorManager } from '../../color/colorManager';
 
 
 suite("EditorBinding", function () {
 
     MockableApis.window = {
         visibleTextEditors : []
-    }
+    };
 
     let editorClass = mock<vscode.TextEditor>();
     let editorSyncClass = mock<IEditorSync>();
     let editor = instance(editorClass);
     let editorSync = instance(editorSyncClass);
 
-    let editorBinding = new EditorBinding(editor, editorSync);
+    let editorBinding = new EditorBinding(editor, editorSync, new ColorManager());
 
 
     test("test remote to local selections", async function() {

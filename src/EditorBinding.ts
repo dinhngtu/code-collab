@@ -4,6 +4,7 @@ import { IEditorListener } from './sync/iEditorListener';
 import { Selection } from './sync/data/selection';
 import { Position } from './sync/data/position';
 import { IEditorSync } from './sync/iEditorSync';
+import { IColorManager } from './color/iColorManager';
 
 interface SiteDecoration {
 	cursorDecoration: vscode.TextEditorDecorationType;
@@ -15,7 +16,7 @@ export default class EditorBinding implements IEditorListener{
 	private decorationByPeerId: Map<string, SiteDecoration>;
 
 	constructor(
-		public editor : vscode.TextEditor, public editorSync : IEditorSync) {
+		public editor : vscode.TextEditor, public editorSync : IEditorSync, private colorManager : IColorManager) {
 		this.decorationByPeerId = new Map();
 		this.editorSync.setListener(this);
 	}
@@ -29,6 +30,7 @@ export default class EditorBinding implements IEditorListener{
 	}
 
 	onSelectionsChangedForPeer(peerid : string, selections : Selection[]) : Promise<void> {
+		console.log("Remote selections changed");
 		let selectionRanges: vscode.Range[] = [];
 		let cursorRanges: vscode.Range[] = [];
 
@@ -46,7 +48,7 @@ export default class EditorBinding implements IEditorListener{
 		return Promise.resolve();
 	}
 
-	updateSelections(selections: vscode.Selection[]) {
+	updateSelections(selections: readonly vscode.Selection[]) {
 		var index = 0;
 		let remoteSelections : Selection[] = [];
 		for(let selection of selections) {
@@ -85,11 +87,11 @@ export default class EditorBinding implements IEditorListener{
 
 	private createDecorationFromPeerId(peerId: string): SiteDecoration {
 		const selectionDecorationRenderOption: vscode.DecorationRenderOptions = {
-			backgroundColor: `rgba(0,0,255,0.6)`
+			backgroundColor: this.colorManager.getColorString(peerId)
 		};
 
 		const curosrDecorationRenderOption: vscode.DecorationRenderOptions = {
-			border: 'solid rgba(0,0,255,0.6)',
+			border: 'solid '+this.colorManager.getColorString(peerId),
 			borderWidth: '5px 1px 5px 1px'
 		};
 

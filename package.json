@@ -1,34 +1,128 @@
 {
-	"name": "vscode-teletype",
-	"displayName": "vscode-teletype",
-	"description": "VS Code Teletype extension for Creating CoEditing skeleton for Eclipse Che and Theia",
-	"types": "dist/index.d.ts",
-	"publisher": "redhat",
+	"name": "vscode-collab",
+	"displayName": "vscode-collab",
+	"description": "VS Code/Code Server Collaboration extension",
+	"publisher": "kainzpat14",
 	"version": "0.0.1",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Rijul5/vscode-teletype.git"
 	},
 	"engines": {
-		"vscode": "^1.35.0"
+		"vscode": "^1.56.0"
 	},
 	"categories": [
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.join-portal",
-		"onCommand:extension.create-portal"
+		"onCommand:extension.addCollabConnection",
+		"onView:extension.collaboration"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "extension.join-portal",
-				"title": "Join Portal"
+				"command": "extension.addCollabConnection",
+				"title": "Add Collaboration Connection",
+				"icon": {
+					"light": "resources/light/add.svg",
+					"dark": "resources/dark/add.svg"
+				}
 			},
 			{
-				"command": "extension.create-portal",
-				"title": "Create Portal"
+				"title" : "Remove Collaboration Connection",
+				"command" : "extension.removeCollabConnection",
+				"icon": {
+					"light": "resources/light/delete.svg",
+					"dark": "resources/dark/delete.svg"
+				}
+			},
+			{
+				"title" : "Share via Collaboration",
+				"command" : "extension.shareItem"
+			},
+			{
+				"title" : "Unshare via Collaboration",
+				"command" : "extension.unshareItem"
+			}
+		],
+		"views": {
+			"explorer": [
+				{
+					"id": "extension.collaboration",
+					"name": "Collaboration"
+				}
+			]
+		},
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "extension.addCollabConnection",
+					"when": "view == extension.collaboration && viewItem == connections",
+					"group": "inline"
+				},
+				{
+					"command": "extension.removeCollabConnection",
+					"when": "view == extension.collaboration && viewItem == connection",
+					"group": "inline"
+				}
+			], 
+			"explorer/context": [ 
+				{
+					"command" : "extension.shareItem",
+					"when" : "!explorerResourceIsFolder"
+				},
+				{
+					"command" : "extension.unshareItem",
+					"when" : "resourcePath in ext.sharedFiles"
+				}
+			]
+		},
+		"colors": [
+			{
+				"id": "collab.peer.0",
+				"description": "Color for peer 1",
+				"defaults": {
+					"dark": "#ff0000",
+					"light": "#ff0000",
+					"highContrast": "#ff0000"
+				}
+			}, 
+			{
+				"id": "collab.peer.1",
+				"description": "Color for peer 2",
+				"defaults": {
+					"dark": "#00ff00",
+					"light": "#00ff00",
+					"highContrast": "#00ff00"
+				}
+			}, 
+			{
+				"id": "collab.peer.2",
+				"description": "Color for peer 3",
+				"defaults": {
+					"dark": "#0000ff",
+					"light": "#0000ff",
+					"highContrast": "#0000ff"
+				}
+			},
+			{
+				"id": "collab.peer.3",
+				"description": "Color for peer 4",
+				"defaults": {
+					"dark": "#ffff00",
+					"light": "#ffff00",
+					"highContrast": "#ffff00"
+				}
+			}, 
+			{
+				"id": "collab.peer.4",
+				"description": "Color for peer 5",
+				"defaults": {
+					"dark": "#00ffff",
+					"light": "#00ffff",
+					"highContrast": "#00ffff"
+				}
 			}
 		]
 	},
@@ -36,34 +130,42 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -p ./",
 		"watch": "tsc -watch -p ./",
-		"postinstall": "node ./node_modules/vscode/bin/install",
-		"test": "npm run compile && node ./node_modules/vscode/bin/test",
+		"test": "npm run compile && node ./out/ci/runTests.js",
 		"package": "vsce package"
 	},
 	"devDependencies": {
-		"@types/mocha": "^2.2.42",
+		"@types/glob": "^7.1.3",
+		"@types/mocha": "^8.2.2",
 		"@types/node": "^10.17.24",
 		"@types/temp": "^0.9.0",
+		"@types/vscode": "^1.56.0",
 		"awesome-typescript-loader": "^5.2.1",
 		"deep-equal": "^1.1.1",
+		"glob": "^7.1.7",
 		"memfs": "^3.2.2",
+		"mocha": "^4.1.0",
 		"source-map-loader": "^0.2.4",
 		"temp": "^0.9.4",
 		"ts-mockito": "^2.6.1",
 		"tslint": "^5.20.1",
 		"typescript": "^3.9.5",
 		"unionfs": "^4.4.0",
-		"vsce": "~1.71.0",
-		"vscode": "^1.1.37",
+		"vsce": "~1.92.0",
+		"vscode-test": "^1.5.2",
 		"webpack": "^4.43.0",
 		"webpack-cli": "^3.3.11"
 	},
 	"dependencies": {
 		"@atom/teletype-client": "github:Rijul5/teletype-client",
+		"@types/uuid": "^8.3.0",
 		"google-protobuf": "^3.12.2",
 		"mkdirp-promise": "^5.0.1",
 		"node-fetch": "^2.6.0",
 		"queue-typescript": "^1.0.1",
-		"wrtc": "^0.4.5"
+		"uuid": "^8.3.2",
+		"wrtc": "^0.4.5",
+		"ws": "^7.4.5",
+		"y-websocket": "^1.3.15",
+		"yjs": "^13.5.6"
 	}
 }

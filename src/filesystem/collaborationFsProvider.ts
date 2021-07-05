@@ -6,8 +6,9 @@
 
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { BufferCache } from '../cache/bufferCache';
 
-export class File implements vscode.FileStat {
+export class CollaborationFile implements vscode.FileStat {
 
     type: vscode.FileType;
     ctime: number;
@@ -15,18 +16,27 @@ export class File implements vscode.FileStat {
     size: number;
 
     name: string;
-    data?: Uint8Array;
+    data: string = "";
 
-    constructor(name: string) {
+    constructor(public bufferCache : BufferCache, name: string) {
         this.type = vscode.FileType.File;
         this.ctime = Date.now();
         this.mtime = Date.now();
         this.size = 0;
         this.name = name;
     }
+
+
+    getData() : Uint8Array {
+        return Buffer.from(this.bufferCache.text);
+    }
+
+    isClosed() : boolean {
+        return this.bufferCache.isClosed;
+    }
 }
 
-export class Directory implements vscode.FileStat {
+export class CollaborationDirectory implements vscode.FileStat {
 
     type: vscode.FileType;
     ctime: number;
@@ -34,7 +44,7 @@ export class Directory implements vscode.FileStat {
     size: number;
 
     name: string;
-    entries: Map<string, File | Directory>;
+    entries: Map<string, CollaborationFile | CollaborationDirectory>;
 
     constructor(name: string) {
         this.type = vscode.FileType.Directory;
@@ -44,13 +54,52 @@ export class Directory implements vscode.FileStat {
         this.name = name;
         this.entries = new Map();
     }
+
 }
 
-export type Entry = File | Directory;
+export type Entry = CollaborationFile | CollaborationDirectory;
 
-export class MemFS implements vscode.FileSystemProvider {
+//Based on vscode examples MemFs
+export class CollaborationFs implements vscode.FileSystemProvider {
 
-    root = new Directory('');
+    root = new CollaborationDirectory('');
+
+    constructor(public urlBase : string) {
+
+    }
+    
+    registerBufferCache(providertype : string, provider : string, uri : string, cache : BufferCache) : vscode.Uri {
+        let lowerprovidertype = providertype.toLowerCase();
+        let lowerprovider = provider.toLowerCase().replace(/\//g,"_");
+        var path = this.urlBase+"://"+lowerprovidertype+"/"+lowerprovider+"/";
+        var current = this.navigateAndCreate(this.root, lowerprovidertype);
+        current = this.navigateAndCreate(current, lowerprovider);
+        let parts = uri.split(new RegExp("[\\/]"));
+        for(let i = 0;i<parts.length-1;i++) {
+            if(parts[i]) {
+                path+=parts[i]+"/";
+                current = this.navigateAndCreate(current, parts[i]);
+            }
+        }
+        let filename = parts[parts.length-1];
+        let fileUri = vscode.Uri.parse(path+filename);
+        cache.setCacheListener(() => {
+            current.entries.delete(filename);
+            this._fireSoon({
+                type: vscode.FileChangeType.Deleted, 
+                uri: fileUri
+            });
+        });
+        current.entries.set(filename, new CollaborationFile(cache, filename));
+        return fileUri;
+    }
+
+    private navigateAndCreate(currentNode : CollaborationDirectory, next : string) : CollaborationDirectory {
+        if(!currentNode.entries.has(next)) {
+            currentNode.entries.set(next, new CollaborationDirectory(next));
+        }
+        return currentNode.entries.get(next) as CollaborationDirectory;
+    }
 
     // --- manage file metadata
 
@@ -70,7 +119,7 @@ export class MemFS implements vscode.FileSystemProvider {
     // --- manage file contents
 
     readFile(uri: vscode.Uri): Uint8Array {
-        const data = this._lookupAsFile(uri, false).data;
+        const data = this._lookupAsFile(uri, false).getData();
         if (data) {
             return data;
         }
@@ -78,77 +127,28 @@ export class MemFS implements vscode.FileSystemProvider {
     }
 
     writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
-        const basename = path.posix.basename(uri.path);
-        const parent = this._lookupParentDirectory(uri);
-        let entry = parent.entries.get(basename);
-        if (entry instanceof Directory) {
-            throw vscode.FileSystemError.FileIsADirectory(uri);
+        console.log("Doing nothing during write of remote file, the remote file is probably just told to save");
+        let file = this._lookupAsFile(uri, false);
+        if(!file) {
+            throw new Error("Cannot interact with not (any longer) existing remote file");
+        } 
+        if(file.isClosed()) {
+            throw new Error("Remote file is closed");
         }
-        if (!entry && !options.create) {
-            throw vscode.FileSystemError.FileNotFound(uri);
-        }
-        if (entry && options.create && !options.overwrite) {
-            throw vscode.FileSystemError.FileExists(uri);
-        }
-        if (!entry) {
-            entry = new File(basename);
-            parent.entries.set(basename, entry);
-            this._fireSoon({ type: vscode.FileChangeType.Created, uri });
-        }
-        entry.mtime = Date.now();
-        entry.size = content.byteLength;
-        entry.data = content;
-
-        this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
     }
 
     // --- manage files/folders
 
     rename(oldUri: vscode.Uri, newUri: vscode.Uri, options: { overwrite: boolean }): void {
-
-        if (!options.overwrite && this._lookup(newUri, true)) {
-            throw vscode.FileSystemError.FileExists(newUri);
-        }
-
-        const entry = this._lookup(oldUri, false);
-        const oldParent = this._lookupParentDirectory(oldUri);
-
-        const newParent = this._lookupParentDirectory(newUri);
-        const newName = path.posix.basename(newUri.path);
-
-        oldParent.entries.delete(entry.name);
-        entry.name = newName;
-        newParent.entries.set(newName, entry);
-
-        this._fireSoon(
-            { type: vscode.FileChangeType.Deleted, uri: oldUri },
-            { type: vscode.FileChangeType.Created, uri: newUri }
-        );
+        throw new Error("File rename is not supported in collaboration fs");
     }
 
     delete(uri: vscode.Uri): void {
-        const dirname = uri.with({ path: path.posix.dirname(uri.path) });
-        const basename = path.posix.basename(uri.path);
-        const parent = this._lookupAsDirectory(dirname, false);
-        if (!parent.entries.has(basename)) {
-            throw vscode.FileSystemError.FileNotFound(uri);
-        }
-        parent.entries.delete(basename);
-        parent.mtime = Date.now();
-        parent.size -= 1;
-        this._fireSoon({ type: vscode.FileChangeType.Changed, uri: dirname }, { uri, type: vscode.FileChangeType.Deleted });
+        throw new Error("File delete is not supported in collaboration fs");
     }
 
     createDirectory(uri: vscode.Uri): void {
-        const basename = path.posix.basename(uri.path);
-        const dirname = uri.with({ path: path.posix.dirname(uri.path) });
-        const parent = this._lookupAsDirectory(dirname, false);
-
-        const entry = new Directory(basename);
-        parent.entries.set(entry.name, entry);
-        parent.mtime = Date.now();
-        parent.size += 1;
-        this._fireSoon({ type: vscode.FileChangeType.Changed, uri: dirname }, { type: vscode.FileChangeType.Created, uri });
+        throw new Error("Directory create is not supported in collaboration fs");
     }
 
     // --- lookup
@@ -156,19 +156,19 @@ export class MemFS implements vscode.FileSystemProvider {
     private _lookup(uri: vscode.Uri, silent: false): Entry;
     private _lookup(uri: vscode.Uri, silent: boolean): Entry | undefined;
     private _lookup(uri: vscode.Uri, silent: boolean): Entry | undefined {
-        const parts = uri.path.split('/');
+        const parts = (uri.authority+"/"+uri.path).split('/');
         let entry: Entry = this.root;
         for (const part of parts) {
             if (!part) {
                 continue;
             }
             let child: Entry | undefined;
-            if (entry instanceof Directory) {
+            if (entry instanceof CollaborationDirectory) {
                 child = entry.entries.get(part);
             }
             if (!child) {
                 if (!silent) {
-                    throw vscode.FileSystemError.FileNotFound(uri);
+                    throw new Error("File does not exist on remote (anymore)");
                 } else {
                     return undefined;
                 }
@@ -178,23 +178,23 @@ export class MemFS implements vscode.FileSystemProvider {
         return entry;
     }
 
-    private _lookupAsDirectory(uri: vscode.Uri, silent: boolean): Directory {
+    private _lookupAsDirectory(uri: vscode.Uri, silent: boolean): CollaborationDirectory {
         const entry = this._lookup(uri, silent);
-        if (entry instanceof Directory) {
+        if (entry instanceof CollaborationDirectory) {
             return entry;
         }
         throw vscode.FileSystemError.FileNotADirectory(uri);
     }
 
-    private _lookupAsFile(uri: vscode.Uri, silent: boolean): File {
+    private _lookupAsFile(uri: vscode.Uri, silent: boolean): CollaborationFile {
         const entry = this._lookup(uri, silent);
-        if (entry instanceof File) {
+        if (entry instanceof CollaborationFile) {
             return entry;
         }
         throw vscode.FileSystemError.FileIsADirectory(uri);
     }
 
-    private _lookupParentDirectory(uri: vscode.Uri): Directory {
+    private _lookupParentDirectory(uri: vscode.Uri): CollaborationDirectory {
         const dirname = uri.with({ path: path.posix.dirname(uri.path) });
         return this._lookupAsDirectory(dirname, false);
     }
