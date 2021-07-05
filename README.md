@@ -5,10 +5,21 @@ The following changes will have to be done:
 - [x] Writing automated tests
 - [x] Porting to code-server if necessary
 - [x] Porting to a different collab provider
-- [ ] Improving the UI
+- [x] Improving the UI
 - [ ] Hosting the collab server inside code-server
 - [ ] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
+- [ ] Create a nice readme
 
+# Changes
+
+Upon installing the plugin in vscode or code-server, you will now notice a new "Collaboration" section in the explorer. Here you can connect to new collaboration providers (either YJS Websocket or Teletype). In order to connect to teletype you will have to generate an authorization token on your github account and enter it when prompted. In order to connect to YJS, you will have to host a YJS websocket server as described on the YJS Github page. 
+
+Once connected the tree will show all peers connected to the same collab provider and you will be able see shared files, to share and unshare files, please use the new menu entry in the normal file explorer. 
+
+Limitations: 
+- YJS does not provide authentication
+- Teletype is limited, since it can only host one editorproxy at a time, meaning if you share multiple files, only the last shared file will have cursor sync, while content sync works for all files. 
+- When using code server the Teletype access data is stored per workspace and not by user (ie. Browser), since the localstorage provided by vscode is workspace local and not stored in the browser. 
 
 The original readme follows:
 
