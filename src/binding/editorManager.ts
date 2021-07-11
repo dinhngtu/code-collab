@@ -12,6 +12,10 @@ export class EditorManager implements IEditorManager {
 
     }
 
+	getOpenEditors(): vscode.TextEditor[] {
+		return Array.from(this.openEditors.values());
+	}
+
     addListener(listener : IWorkspaceEventListener) {
 		this.listeners.push(listener);
 	}

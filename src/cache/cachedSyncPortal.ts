@@ -15,6 +15,14 @@ export class CachedSyncPortal extends DelayedListenerExecution<IPortalListener> 
         delegate.setListener(this);
     }
 
+    supportsLocalshare(): boolean {
+        return this.delegate.supportsLocalshare();
+    }
+
+    shareLocal(workspace: string, fileid: string, initialContent : string): Promise<IEditorSync> {
+        return this.delegate.shareLocal(workspace, fileid, initialContent);
+    }
+
     isHost(): boolean {
         return this.delegate.isHost();
     }

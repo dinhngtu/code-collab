@@ -11,7 +11,7 @@ export abstract class BaseConnector implements IConnector {
     
 
     protected addConnection(name : string, syncPortal : ISyncPortal) : SyncConnection {
-        let binding = new SyncConnection(this.extensionContext,new CachedSyncPortal(syncPortal, this.extensionContext,name),name);
+        let binding = new SyncConnection(this.extensionContext,new CachedSyncPortal(syncPortal, this.extensionContext,name),name, !this.supportsDisconnect());
         binding.initialize();
         this.extensionContext.connectionManager.addConnection(binding, this);
         return binding;
@@ -25,5 +25,11 @@ export abstract class BaseConnector implements IConnector {
     abstract getName(): string;
     abstract restoreConnections(): Promise<void>;
 
-    
+    supportsNewConnection() {
+        return true;
+    }
+
+    supportsDisconnect() {
+        return true;
+    }
 }

@@ -7,4 +7,5 @@ export interface IEditorManager {
     openDocument(uri : vscode.Uri) : Promise<vscode.TextDocument>;
     activateEditor(buffer: vscode.TextDocument) : Promise<vscode.TextEditor>;
     addListener(listener : IWorkspaceEventListener) : void;
+    getOpenEditors() : vscode.TextEditor[];
 }

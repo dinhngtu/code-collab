@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
 import { SyncConnection } from '../../binding/syncConnection';
-import { IColorManager } from '../../color/iColorManager';
-import { ConnectionManager } from '../../connectionManager';
 import { ExtensionContext } from '../../extensionContext';
 import { input } from '../base/viewFunctions';
 import { BaseConnector } from './baseConnector';
@@ -22,7 +20,9 @@ export class MultiConnector extends BaseConnector implements IConnector{
     async newConnection() : Promise<SyncConnection> {
         let namedConnectors = new Map<string,IConnector>();
         for(let connector of this.connectors) {
-            namedConnectors.set(connector.getName(),connector);
+            if(connector.supportsNewConnection()) {
+                namedConnectors.set(connector.getName(),connector);
+            }
         }
         let choice = await input(async () => await vscode.window.showQuickPick(Array.from(namedConnectors.keys()), {canPickMany : false}));
         let connector = namedConnectors.get(choice)!;

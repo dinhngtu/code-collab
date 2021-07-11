@@ -12,6 +12,9 @@ import { SharingFileDecorationProvider } from './view/sharing/sharingFileDecorat
 import { FileSharer } from './view/sharing/fileSharer';
 import { SyncConnection } from './binding/syncConnection';
 import { ConnectionTreeElement } from './view/tree/connectionTreeElement';
+import envPaths from "env-paths";
+import { CodeServerConnector } from './view/connector/codeServerConnector';
+
 
 let extensionContext = ExtensionContext.default();
 let shareProvider = new SharingFileDecorationProvider(extensionContext.connectionManager);
@@ -21,7 +24,11 @@ let fileSharer = new FileSharer(extensionContext.connectionManager, shareProvide
 // the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	console.log('Great, your extension "vscode-teletype" is now active!');
+	extensionContext.extensionKind = context.extension.extensionKind;
+	determineCodeServer(context);
+	
+	let extensionMode = context.extension.extensionKind === vscode.ExtensionKind.UI ? "UI" : "Backend";
+	console.log("Starting the collaboration extension in mode "+extensionMode+ " CodeServer="+extensionContext.isCodeServer);
 	
 	context.subscriptions.push(vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true}));
 
@@ -30,7 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let teletypeConnector = new TeletypeConnector(context.workspaceState, extensionContext);
 	let yjsConnector = new YJSConnector(context.workspaceState, extensionContext);
-	let multiConnector = new MultiConnector(extensionContext, [yjsConnector, teletypeConnector]);
+	let codeServerConnector = new CodeServerConnector(extensionContext);
+	let multiConnector = new MultiConnector(extensionContext, [yjsConnector, teletypeConnector,codeServerConnector]);
 
 	vscode.window.registerTreeDataProvider("extension.collaboration", new CollaborationTreeDataProvider(extensionContext.connectionManager));
 
@@ -39,6 +47,17 @@ export function activate(context: vscode.ExtensionContext) {
 	multiConnector.restoreConnections();
 }
 
+
+function determineCodeServer(context: vscode.ExtensionContext) {
+	if (context.extension.extensionKind === vscode.ExtensionKind.UI) {
+		if (typeof window !== 'undefined') {
+			extensionContext.isCodeServer = true;
+		}
+	} else {
+		let probableCodeServerPath = envPaths("code-server",  { suffix: "" }).data;
+		extensionContext.isCodeServer = context.extensionPath.startsWith(probableCodeServerPath);
+	}
+}
 
 function createCommands(multiConnector: MultiConnector) {
 	vscode.commands.registerCommand("extension.addCollabConnection", async () => {

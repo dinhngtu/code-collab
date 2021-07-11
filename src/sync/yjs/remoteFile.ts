@@ -32,10 +32,17 @@ export class RemoteFileProxy implements IRemoteFile {
     }
 
     get selections() : Y.Array<RemoteSelection> {
-        return this.delegate.get("selections");
+        let selections = this.delegate.get("selections");
+        if(selections === undefined) {
+            console.warn("Proxy: Selections are undefined");
+        }
+        return selections;
     }
 
     set selections(selections : Y.Array<RemoteSelection>) {
+        if(selections === undefined) {
+            console.error("Proxy: Settings selections to undefined");
+        }
         this.delegate.set("selections", selections);
     }
 
@@ -85,10 +92,17 @@ export class RemoteFile extends Y.Map<any> implements IRemoteFile{
     }
 
     get selections() : Y.Array<RemoteSelection> {
-        return this.get("selections");
+        let selections = this.get("selections");
+        if(selections === undefined) {
+            console.warn("Proxy: Selections are undefined");
+        }
+        return selections;
     }
 
     set selections(selections : Y.Array<RemoteSelection>) {
+        if(selections === undefined) {
+            console.error("Settings selections to undefined");
+        }
         this.set("selections", selections);
     }
 

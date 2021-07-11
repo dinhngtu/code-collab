@@ -4,12 +4,14 @@ import { IPeerListener } from "../sync/iPeerListener";
 import { IPortalListener } from "../sync/iPortalListener";
 import { IRemoteFileListener } from "../sync/iRemoteFileListener";
 import { ISyncPortal } from "../sync/iSyncPortal";
+import { Autosharer } from "./autosharer";
 import { BindingStorage } from "./bindingStorage";
 import { BufferBindingFactory } from "./bufferBindingFactory";
 import { DocumentListener } from "./documentListener";
 import { EditorBindingFactory } from "./editorBindingFactory";
 import { EditorListener } from "./editorListener";
 import { EditorManager } from "./editorManager";
+import { IAutosharer } from "./iAutosharer";
 import { IBindingStorage } from "./iBindingStorage";
 import { IBufferBindingFactory } from "./iBufferBindingFactory";
 import { IDocumentListener } from "./iDocumentListener";
@@ -34,8 +36,9 @@ export class SyncConnection {
     public peerManager : PeerManager = new PeerManager();
     public portalListener : IPortalListener = new PortalListener(this.shareRemoteToLocal, this.peerManager, this.syncPortal);
     public editorListener : EditorListener = new EditorListener(this.bindingStorage);
+    public autoshare : IAutosharer = new Autosharer(this.syncPortal, this.editorManager, this.bufferBindingFactory, this.editorBindingFactory, this.bindingStorage);
 
-    constructor(private extensionContext : ExtensionContext, public syncPortal : ISyncPortal, private name : string) {
+    constructor(private extensionContext : ExtensionContext, public syncPortal : ISyncPortal, private name : string, public persistent : boolean) {
 
     }
 

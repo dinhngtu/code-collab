@@ -19,8 +19,8 @@ suite("MemoryToVscodeTest", function () {
     let extensionContext = ExtensionContext.default();
     let memorySyncPortal = new MemorySyncPortal();    
     let syncPortal = new CachedSyncPortal(memorySyncPortal, extensionContext, "test");
-    let syncConnection = new SyncConnection(extensionContext, syncPortal, "test");
-    vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true})
+    let syncConnection = new SyncConnection(extensionContext, syncPortal, "test", false);
+    vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true});
 
     suiteSetup(async () => {
         MockableApis.restore();
