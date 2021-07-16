@@ -9,7 +9,7 @@ import * as fs from 'fs';
 
 export class CodeServerConnector extends YjsBaseConnector {
 
-    private testing = true;
+    private testing = false;
 
     async newConnection(): Promise<SyncConnection> {
         throw new Error("New Connections are not supported");
