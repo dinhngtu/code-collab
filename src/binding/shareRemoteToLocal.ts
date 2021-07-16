@@ -59,7 +59,7 @@ export class ShareRemoteToLocal extends DelayedListenerExecution<IRemoteFileMana
 		return [];
 	}
 
-	onLocalFileOpened(editor: vscode.TextEditor): void {
+	async onLocalFileOpened(editor: vscode.TextEditor): Promise<void> {
 		let buffer = editor.document;
 		let bufferBinding = this.bindingStorage.findBufferBindingByBuffer(buffer);
 		if(bufferBinding && this.peersByFile.has(bufferBinding)) {

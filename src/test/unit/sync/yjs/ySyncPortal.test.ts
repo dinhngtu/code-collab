@@ -1,6 +1,6 @@
 import {anyString, anything, instance, mock, strictEqual, verify, when} from 'ts-mockito';
 import * as Y from 'yjs';
-import { RemoteFile } from '../../../../sync/yjs/remoteFile';
+import { RemoteFile, RemoteFileProxy } from '../../../../sync/yjs/remoteFile';
 import { RemoteSelection } from '../../../../sync/yjs/remoteSelection';
 import * as assert from 'assert';
 import { IPortalListener } from '../../../../sync/iPortalListener';
@@ -71,6 +71,21 @@ suite("YSyncPortal", function () {
     test("test close", async () => {
         await syncPortal.close();
         assert.strictEqual(doc.getMap("peers").size,0);
+    });
+
+    test("Test sync local", async () => {
+        assert.ok(syncPortal.supportsLocalshare());
+        let workspaces = doc.getMap("workspaces");
+        var editorSync = await syncPortal.shareLocal("workspace", "file", "content");
+        assert.ok(editorSync);
+        assert.ok(workspaces.has("workspace"));
+        let workspace = workspaces.get("workspace");
+        assert.ok(workspace.has("file"));
+        let file = new RemoteFileProxy(workspace.get("file")!);
+        assert.strictEqual("content",file.buffer.toString());
+        editorSync = await syncPortal.shareLocal("workspace", "file", "othercontent");
+        assert.ok(editorSync);
+        assert.strictEqual("content",file.buffer.toString());
     });
 });
 

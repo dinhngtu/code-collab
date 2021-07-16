@@ -47,6 +47,7 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
 
     private async shareNewFile(uri: Uri, workspace: string) {
         let document = this.editorManager.getOpenEditor(uri).document;
+        console.log("sharing ("+workspace+","+uri.fsPath+","+document.getText()+")");
         let editorSync = await this.syncPortal.shareLocal(workspace, uri.fsPath, document.getText());
         let bufferBinding = this.bufferBindingFactory.createBinding(document, editorSync.getBufferSync(), uri.fsPath);
         this.bindingStorage.storeBufferBinding(bufferBinding);
@@ -72,7 +73,7 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
         console.debug(uri.fsPath + " was already autoshared, reenabled binding");
     }
 
-    onLocalFileOpened(editor: TextEditor): void {
+    async onLocalFileOpened(editor: TextEditor): Promise<void> {
         let workspace = this.getWorkspace(editor);
         if(workspace) {
             this.autoshareIfEnabled(workspace, editor.document.uri);
