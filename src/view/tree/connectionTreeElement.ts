@@ -7,6 +7,7 @@ export class ConnectionTreeElement extends vscode.TreeItem implements ICollabora
     constructor(public connection : SyncConnection) {
         super(connection.getName() + " ("+connection.getType()+")", connection.peerManager.peers.length === 0?vscode.TreeItemCollapsibleState.None:vscode.TreeItemCollapsibleState.Expanded);
         console.log(JSON.stringify(this.iconPath));
+        this.setContextVaue();
     }
 
     iconPath = {
@@ -14,5 +15,11 @@ export class ConnectionTreeElement extends vscode.TreeItem implements ICollabora
         dark: path.join(__filename, '..','..','..','..',  'resources', 'dark', 'connection.svg')
     };
 
-    contextValue = "connection";
+    private setContextVaue() {
+        if (this.connection.persistent) {
+            this.contextValue = "persistentConnection";
+        } else {
+            this.contextValue = "connection";
+        }
+    }
 }

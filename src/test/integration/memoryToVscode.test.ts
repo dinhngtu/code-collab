@@ -13,14 +13,19 @@ import * as fs from 'fs';
 import { ExtensionContext } from '../../extensionContext';
 import { SyncConnection } from '../../binding/syncConnection';
 import { CachedSyncPortal } from '../../cache/cachedSyncPortal';
+import { pollEqual } from '../poller';
 
 suite("MemoryToVscodeTest", function () {
 
     let extensionContext = ExtensionContext.default();
     let memorySyncPortal = new MemorySyncPortal();    
     let syncPortal = new CachedSyncPortal(memorySyncPortal, extensionContext, "test");
-    let syncConnection = new SyncConnection(extensionContext, syncPortal, "test");
-    vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true})
+    let syncConnection = new SyncConnection(extensionContext, syncPortal, "test", false);
+    try {
+        vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true});
+    } catch(error) {
+        //in that case we are running with a vscode instance that already has our plugin installed and the provider registered
+    }
 
     suiteSetup(async () => {
         MockableApis.restore();
@@ -138,21 +143,4 @@ async function remoteEdit(activeEditor: vscode.TextEditor | undefined, bufferLis
     await pollEqual(1000, "Hllo", () => activeEditor?.document.getText());
 
     assert.strictEqual(bufferSync.localChanges.length, 0);
-}
-
-async function pollEqual(timeoutInMs : number, expected : any, actual : () => any) {
-    // in most cases this is a string vs. a buffer, and we want that comparison to work
-    // tslint:disable-next-line: triple-equals
-    await poll(timeoutInMs, "Expected: |"+expected+"| Actual: |"+actual()+"|", () => expected == actual());
-}
-
-async function poll(timeoutInMs : number, message : string, check : () => boolean) {
-    var waited = 0;
-    while(!check() && waited <= timeoutInMs) {
-        await sleep(10);
-        waited+=10;
-    }
-    if(waited>timeoutInMs) {
-        throw new Error(message);
-    }
 }

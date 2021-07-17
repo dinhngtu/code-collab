@@ -45,7 +45,7 @@ export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventL
 		}
     }
     
-    onLocalFileOpened(editor: vscode.TextEditor): void {
+    async onLocalFileOpened(editor: vscode.TextEditor): Promise<void> {
         let sharedFile = this.sharedFiles.get(editor.document.uri.fsPath);
         if(sharedFile) {
             sharedFile.bufferBinding.editor = editor;

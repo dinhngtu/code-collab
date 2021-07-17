@@ -4,7 +4,7 @@ import BufferBinding from '../../BufferBinding';
 import { IBufferSync } from '../../sync/iBufferSync';
 import * as vscode from 'vscode';
 import { MockableApis } from '../../base/mockableApis';
-import { ManualCyclicExecutor } from './manualCyclicExecutor';
+import { ManualTimedExecutor } from './manualTimedExecutor';
 import { Volume } from "memfs";
 import { Position } from '../../sync/data/position';
 import { TextChange, TextChangeType } from '../../sync/data/textChange';
@@ -14,7 +14,7 @@ import { MemoryEditor } from './memoryEditor';
 suite("BufferBinding", function () {
 
     
-    let executor = new ManualCyclicExecutor();
+    let executor = new ManualTimedExecutor();
     let vol = Volume.fromJSON({
         "file.txt" : ""
     },"/tmp");
@@ -83,7 +83,7 @@ suite("BufferBinding", function () {
     });
 });
 
-async function performChanges(bufferBinding: BufferBinding, changes: TextChange[], executor: ManualCyclicExecutor, activate : boolean = false) {
+async function performChanges(bufferBinding: BufferBinding, changes: TextChange[], executor: ManualTimedExecutor, activate : boolean = false) {
     let memoryEditor = createEditor(bufferBinding, activate);
     await bufferBinding.onTextChanges(changes);
     await executor.cycle(100);

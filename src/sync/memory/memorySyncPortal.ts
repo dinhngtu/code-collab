@@ -4,9 +4,6 @@ import { ISyncPortal } from "../iSyncPortal";
 import { MemoryEditorSync } from "./memoryEditorSync";
 
 export class MemorySyncPortal implements ISyncPortal {
-    
-    
-
     localFiles : string[] = [];
     editorSyncFiles = new Map<IEditorSync, string>();
     activeEditorSync : IEditorSync | null = null;
@@ -49,6 +46,21 @@ export class MemorySyncPortal implements ISyncPortal {
 
     close(): void {
         this.closeCount++;
+    }
+
+    supportsLocalshare(): boolean {
+        return false;
+    }
+
+    async shareLocal(workspace: string, fileid: string, initialContent : string): Promise<IEditorSync> {
+        throw new Error("Localshare is not supported");
+    }
+
+    supportsFileAge(): boolean {
+        return false;
+    }
+    getFileAge(workspace: string, fileid: string): number | null {
+        throw new Error("Method not implemented.");
     }
 
 }

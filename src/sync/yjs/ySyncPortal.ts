@@ -8,7 +8,7 @@ import * as uuid from 'uuid';
 import { RemoteSelection } from "./remoteSelection";
 import { YTransactionBasedSync } from "./yTransactionBasedSync";
 import * as vscode from 'vscode';
-import { CyclicExecutor } from "../../base/cyclicExecutor";
+import { TimedExecutor } from "../../base/timedExecutor";
 
 
 const noneUri = vscode.Uri.parse("none://");
@@ -21,19 +21,19 @@ type PeerAndKey = {
 
 export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implements ISyncPortal {
 
-    
-
     private peers : Y.Map<Y.Map<Y.Map<any>>>;
+    private workspaces : Y.Map<Y.Map<Y.Map<any>>>;
     private editorSyncsByPeerAndFile = new Map<string,Map<string, YEditorSync>>();
     private peerAndKeyByEditorSync = new Map<IEditorSync, PeerAndKey>();
     private me = new Y.Map<Y.Map<any>>();
     private timedOutPeers = new Set<string>();
     private observers = new Map<Y.AbstractType<any>, any>();
 
-    constructor(public doc : Y.Doc) {
-        super(doc, uuid.v4());
+    constructor(public doc : Y.Doc, public displayName : string) {
+        super(doc, displayName+"("+uuid.v4()+")");
         console.debug("Starting YSyncPortal "+this.localPeer);
         this.peers = doc.getMap("peers");
+        this.workspaces = doc.getMap("workspaces");
         this.peers.set(this.localPeer, this.me);
         for(let peer of this.peers.keys()) {
             this.onPeerAdded(peer, this.peers.get(peer)!);
@@ -42,7 +42,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         this.peers.observe(observer);
         this.observers.set(this.peers,observer);
 
-        new CyclicExecutor().executeCyclic(this.handleKeepAlive.bind(this), 300);
+        new TimedExecutor().executeCyclic(this.handleKeepAlive.bind(this), 300);
     }
 
     isHost(): boolean {
@@ -286,4 +286,58 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         this.peers.delete(this.localPeer);
     }
 
+    supportsLocalshare(): boolean {
+        return true;
+    }
+    
+    async shareLocal(workspace: string, fileid: string, initialContent : string, override : boolean): Promise<IEditorSync> {
+        this.createWorkspaceIfNotExists(workspace);
+
+        let remoteFile: IRemoteFile = this.getWorkspaceRemoteFile(workspace, fileid, initialContent, override);
+
+        return this.getEditorSync(workspace, fileid, remoteFile);
+    }
+
+    supportsFileAge(): boolean {
+        return true;
+    }
+    
+    getFileAge(workspace: string, fileid: string): number | null {
+        if (this.workspaces.has(workspace)) {
+            let workspaceEntry = this.workspaces.get(workspace)!;
+            if(workspaceEntry.has(fileid)) {
+                let file = new RemoteFileProxy(workspaceEntry.get(fileid)!);
+                return file.lastSave;
+            }
+        }
+        return null;
+    }
+
+    private createWorkspaceIfNotExists(workspace: string) {
+        this.transact(() => {
+            if (!this.workspaces.has(workspace)) {
+                this.workspaces.set(workspace, new Y.Map<Y.Map<any>>());
+            }
+        });
+    }
+
+    private getWorkspaceRemoteFile(workspace: string, fileid: string, initialContent : string, override : boolean) {
+        let remoteFile: IRemoteFile = {} as IRemoteFile;
+        this.transact(() => {
+            let workspaceEntry = this.workspaces.get(workspace);
+            if (workspaceEntry!.has(fileid)) {
+                remoteFile = new RemoteFileProxy(workspaceEntry!.get(fileid)!);
+                if(override) {
+                    remoteFile.buffer.delete(0,remoteFile.buffer.length);
+                    remoteFile.buffer.insert(0, initialContent);
+                    remoteFile.lastSave = Date.now();
+                }
+            } else {
+                remoteFile = new RemoteFile(this.localPeer, fileid, new Y.Array<RemoteSelection>(), new Y.Text(initialContent), false);
+                workspaceEntry!.set(fileid, remoteFile as RemoteFile);
+                remoteFile.lastSave = Date.now();
+            }
+        });
+        return remoteFile;
+    }
 }

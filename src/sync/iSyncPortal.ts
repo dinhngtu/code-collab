@@ -9,4 +9,8 @@ export interface ISyncPortal {
     close() : void;
     getType() : string;
     isHost() : boolean;
+    supportsLocalshare() : boolean;
+    shareLocal(workspace : string, fileid : string, initialContent : string, overrideContent : boolean) : Promise<IEditorSync>;
+    supportsFileAge() : boolean;
+    getFileAge(workspace : string, fileid : string) : number | null;
 }

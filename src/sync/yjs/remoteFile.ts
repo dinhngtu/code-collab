@@ -9,12 +9,14 @@ export interface IRemoteFile {
     buffer : Y.Text;
     isActive : boolean;
     saveRequests : Y.Array<string>;
+    lastSave : number;
 }
 
 export class RemoteFileProxy implements IRemoteFile {
     constructor(public delegate : Y.Map<any>) {
 
     }
+
     get peer() : string {
         return this.delegate.get("peer");
     }
@@ -32,10 +34,17 @@ export class RemoteFileProxy implements IRemoteFile {
     }
 
     get selections() : Y.Array<RemoteSelection> {
-        return this.delegate.get("selections");
+        let selections = this.delegate.get("selections");
+        if(selections === undefined) {
+            console.warn("Proxy: Selections are undefined");
+        }
+        return selections;
     }
 
     set selections(selections : Y.Array<RemoteSelection>) {
+        if(selections === undefined) {
+            console.error("Proxy: Settings selections to undefined");
+        }
         this.delegate.set("selections", selections);
     }
 
@@ -63,6 +72,14 @@ export class RemoteFileProxy implements IRemoteFile {
         this.delegate.set("saveRequests", saveRequests);
     }
 
+    get lastSave() : number {
+        return this.delegate.get("lastSave");
+    }
+
+    set lastSave(lastSave : number) {
+        this.delegate.set("lastSave", lastSave);
+    }
+
 }
 
 export class RemoteFile extends Y.Map<any> implements IRemoteFile{
@@ -85,10 +102,17 @@ export class RemoteFile extends Y.Map<any> implements IRemoteFile{
     }
 
     get selections() : Y.Array<RemoteSelection> {
-        return this.get("selections");
+        let selections = this.get("selections");
+        if(selections === undefined) {
+            console.warn("Proxy: Selections are undefined");
+        }
+        return selections;
     }
 
     set selections(selections : Y.Array<RemoteSelection>) {
+        if(selections === undefined) {
+            console.error("Settings selections to undefined");
+        }
         this.set("selections", selections);
     }
 
@@ -116,6 +140,14 @@ export class RemoteFile extends Y.Map<any> implements IRemoteFile{
         this.set("saveRequests", saveRequests);
     }
 
+    get lastSave() : number {
+        return this.get("lastSave");
+    }
+
+    set lastSave(lastSave : number) {
+        this.set("lastSave", lastSave);
+    }
+
     constructor(peer : string, uri : string, selections : Y.Array<RemoteSelection>, buffer : Y.Text, isActive : boolean, saveRequests : Y.Array<string> = new Y.Array<string>()) {
         super();
         this.peer = peer;
@@ -124,5 +156,6 @@ export class RemoteFile extends Y.Map<any> implements IRemoteFile{
         this.buffer = buffer;
         this.isActive = isActive;
         this.saveRequests = saveRequests;
+        this.lastSave = Date.now();
     }
 }

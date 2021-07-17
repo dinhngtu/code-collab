@@ -16,7 +16,7 @@ export class YEditorSync extends YTransactionBasedSync<IEditorListener> implemen
     constructor(doc : Y.Doc, localpeer : string, public remoteFile : IRemoteFile) {
         super(doc, localpeer);
         this.remoteFile.selections.observe(this.selectionObserver);
-        this.bufferSync = new YBufferSync(this.doc, this.localPeer, remoteFile.buffer, remoteFile.saveRequests);
+        this.bufferSync = new YBufferSync(this.doc, this.localPeer, remoteFile);
     }
 
     private onSelectionChanged(event : Y.YArrayEvent<RemoteSelection>) {

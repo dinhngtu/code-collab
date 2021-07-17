@@ -60,7 +60,7 @@ export class MemoryWorkspace {
     openedTextDocuments = new Map<vscode.Uri, vscode.TextDocument>();
     changeTextDocumentListener : ChangeTextDocumentListener | undefined = undefined;
     willSaveTextDocumentListener : WillSaveTextDocumentListener | undefined = undefined;
-
+    workspaceFolders : ReadonlyArray<vscode.WorkspaceFolder> = [];
     async openTextDocument(uri : vscode.Uri) : Promise<vscode.TextDocument> {
         let document = new MockTextDocument();
         document.uri = uri;

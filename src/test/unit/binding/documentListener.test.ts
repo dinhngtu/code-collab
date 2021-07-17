@@ -6,7 +6,7 @@ import { DocumentListener } from "../../../binding/documentListener";
 import { IBindingStorage } from "../../../binding/iBindingStorage";
 import BufferBinding from "../../../BufferBinding";
 import { MemoryWorkspace } from "../memoryWorkspace";
-import * as vscode from 'vscode'
+import * as vscode from 'vscode';
 
 suite("DocumentListener", function () {
     
@@ -46,6 +46,6 @@ suite("DocumentListener", function () {
         when(bindingStorageClass.findBufferBindingByBuffer(event.document)).thenReturn(bufferBinding);
         memoryWorkspace.willSaveTextDocumentListener!(event);
         verify(bufferBindingClass.requestSavePromise()).once();
-        verify(eventClass.waitUntil(anything())).once()
+        verify(eventClass.waitUntil(anything())).once();
     });
 });

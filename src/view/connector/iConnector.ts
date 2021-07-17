@@ -5,4 +5,6 @@ export interface IConnector {
     getName() : string;
     restoreConnections() : Promise<void>;
     disconnect(connection : SyncConnection) : Promise<void>;
+    supportsNewConnection() : boolean;
+    supportsDisconnect() : boolean;
 }
