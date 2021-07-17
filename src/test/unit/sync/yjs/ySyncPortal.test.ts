@@ -6,6 +6,7 @@ import * as assert from 'assert';
 import { IPortalListener } from '../../../../sync/iPortalListener';
 import { YSyncPortal } from '../../../../sync/yjs/ySyncPortal';
 import { sleep } from '../../../../base/functions';
+import { pollNotEqual } from '../../../poller';
 
 suite("YSyncPortal", function () {
 
@@ -76,18 +77,33 @@ suite("YSyncPortal", function () {
     test("Test sync local", async () => {
         assert.ok(syncPortal.supportsLocalshare());
         let workspaces = doc.getMap("workspaces");
-        var editorSync = await syncPortal.shareLocal("workspace", "file", "content");
+        var editorSync = await syncPortal.shareLocal("workspace", "file", "content", false);
         assert.ok(editorSync);
         assert.ok(workspaces.has("workspace"));
         let workspace = workspaces.get("workspace");
         assert.ok(workspace.has("file"));
         let file = new RemoteFileProxy(workspace.get("file")!);
         assert.strictEqual("content",file.buffer.toString());
-        editorSync = await syncPortal.shareLocal("workspace", "file", "othercontent");
+        editorSync = await syncPortal.shareLocal("workspace", "file", "othercontent", false);
         assert.ok(editorSync);
         assert.strictEqual("content",file.buffer.toString());
     });
+
+    test("Test get file age", async () => {
+        assert.ok(syncPortal.supportsLocalshare());
+        let workspaces = doc.getMap("workspaces");
+        var editorSync = await syncPortal.shareLocal("workspace", "file", "content", false);
+        assert.ok(editorSync);
+        assert.ok(syncPortal.supportsFileAge());
+        let fileAge = syncPortal.getFileAge("workspace","file");
+        assert.ok(fileAge);
+        let file = new RemoteFileProxy(workspaces.get("workspace")!.get("file")!);
+        file.saveRequests.push(["123"]);
+        pollNotEqual(200,fileAge, () => syncPortal.getFileAge("workspace","file"));
+    });
 });
+
+
 
 async function testOpenActivateLocalFile(syncPortal: YSyncPortal, doc: Y.Doc) {
     let sync = await syncPortal.syncLocalFileToRemote("test.txt");

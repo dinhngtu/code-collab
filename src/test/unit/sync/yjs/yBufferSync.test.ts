@@ -5,6 +5,8 @@ import {IBufferListener} from '../../../../sync/iBufferListener';
 import { YBufferSync } from '../../../../sync/yjs/yBufferSync';
 import * as Y from 'yjs';
 import * as assert from 'assert';
+import { RemoteFile } from '../../../../sync/yjs/remoteFile';
+import * as vscode from 'vscode';
 
 suite("YBufferSync", function () {
 
@@ -13,17 +15,18 @@ suite("YBufferSync", function () {
     let listener = instance(listenerClass);
 
     var doc = new Y.Doc();
-    var buffer = doc.getText("buffer");
-    var saves= doc.getArray<string>("saves");
-    var bufferSync = new YBufferSync(doc, "123",buffer, saves);
-    bufferSync.setListener(listener);
+    var remoteFile : RemoteFile;
+    var buffer : Y.Text;
+    var saves : Y.Array<string>;
+    var bufferSync : YBufferSync;
 
     setup(() => {
-        bufferSync.close();
         doc = new Y.Doc();
-        buffer = doc.getText("buffer");
-        saves = doc.getArray<string>("saves");
-        bufferSync = new YBufferSync(doc, "123",buffer, saves);
+        remoteFile = new RemoteFile("123","file://none",new Y.Array(), new Y.Text(), true);
+        doc.getMap("files").set("file",remoteFile);
+        buffer = remoteFile.buffer;
+        saves = remoteFile.saveRequests;
+        bufferSync = new YBufferSync(doc, "123",remoteFile);
         bufferSync.setListener(listener);
     });
 
@@ -56,4 +59,9 @@ suite("YBufferSync", function () {
         verify(listenerClass.onTextChanges(deepEqual([expectedDelete]))).once();
     });
 
+    teardown(()=> {
+        if(bufferSync) {
+            bufferSync.close();
+        }
+    });
 });

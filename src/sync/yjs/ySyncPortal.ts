@@ -290,14 +290,28 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         return true;
     }
     
-    async shareLocal(workspace: string, fileid: string, initialContent : string): Promise<IEditorSync> {
+    async shareLocal(workspace: string, fileid: string, initialContent : string, override : boolean): Promise<IEditorSync> {
         this.createWorkspaceIfNotExists(workspace);
 
-        let remoteFile: IRemoteFile = this.getWorkspaceRemoteFile(workspace, fileid, initialContent);
+        let remoteFile: IRemoteFile = this.getWorkspaceRemoteFile(workspace, fileid, initialContent, override);
 
         return this.getEditorSync(workspace, fileid, remoteFile);
     }
 
+    supportsFileAge(): boolean {
+        return true;
+    }
+    
+    getFileAge(workspace: string, fileid: string): number | null {
+        if (this.workspaces.has(workspace)) {
+            let workspaceEntry = this.workspaces.get(workspace)!;
+            if(workspaceEntry.has(fileid)) {
+                let file = new RemoteFileProxy(workspaceEntry.get(fileid)!);
+                return file.lastSave;
+            }
+        }
+        return null;
+    }
 
     private createWorkspaceIfNotExists(workspace: string) {
         this.transact(() => {
@@ -307,15 +321,21 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
         });
     }
 
-    private getWorkspaceRemoteFile(workspace: string, fileid: string, initialContent : string) {
+    private getWorkspaceRemoteFile(workspace: string, fileid: string, initialContent : string, override : boolean) {
         let remoteFile: IRemoteFile = {} as IRemoteFile;
         this.transact(() => {
             let workspaceEntry = this.workspaces.get(workspace);
             if (workspaceEntry!.has(fileid)) {
                 remoteFile = new RemoteFileProxy(workspaceEntry!.get(fileid)!);
+                if(override) {
+                    remoteFile.buffer.delete(0,remoteFile.buffer.length);
+                    remoteFile.buffer.insert(0, initialContent);
+                    remoteFile.lastSave = Date.now();
+                }
             } else {
                 remoteFile = new RemoteFile(this.localPeer, fileid, new Y.Array<RemoteSelection>(), new Y.Text(initialContent), false);
                 workspaceEntry!.set(fileid, remoteFile as RemoteFile);
+                remoteFile.lastSave = Date.now();
             }
         });
         return remoteFile;

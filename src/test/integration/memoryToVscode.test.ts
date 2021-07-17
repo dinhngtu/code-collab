@@ -13,6 +13,7 @@ import * as fs from 'fs';
 import { ExtensionContext } from '../../extensionContext';
 import { SyncConnection } from '../../binding/syncConnection';
 import { CachedSyncPortal } from '../../cache/cachedSyncPortal';
+import { pollEqual } from '../poller';
 
 suite("MemoryToVscodeTest", function () {
 
@@ -142,21 +143,4 @@ async function remoteEdit(activeEditor: vscode.TextEditor | undefined, bufferLis
     await pollEqual(1000, "Hllo", () => activeEditor?.document.getText());
 
     assert.strictEqual(bufferSync.localChanges.length, 0);
-}
-
-async function pollEqual(timeoutInMs : number, expected : any, actual : () => any) {
-    // in most cases this is a string vs. a buffer, and we want that comparison to work
-    // tslint:disable-next-line: triple-equals
-    await poll(timeoutInMs, "Expected: |"+expected+"| Actual: |"+actual()+"|", () => expected == actual());
-}
-
-async function poll(timeoutInMs : number, message : string, check : () => boolean) {
-    var waited = 0;
-    while(!check() && waited <= timeoutInMs) {
-        await sleep(10);
-        waited+=10;
-    }
-    if(waited>timeoutInMs) {
-        throw new Error(message);
-    }
 }

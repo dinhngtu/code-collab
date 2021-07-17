@@ -4,6 +4,8 @@ import { IPeerListener } from "../sync/iPeerListener";
 import { IPortalListener } from "../sync/iPortalListener";
 import { IRemoteFileListener } from "../sync/iRemoteFileListener";
 import { ISyncPortal } from "../sync/iSyncPortal";
+import { FileAgeQuery } from "../view/sharing/FileAgeQuery";
+import { IFileAgeQuery } from "../view/sharing/iFileAgeQuery";
 import { Autosharer } from "./autosharer";
 import { BindingStorage } from "./bindingStorage";
 import { BufferBindingFactory } from "./bufferBindingFactory";
@@ -36,7 +38,8 @@ export class SyncConnection {
     public peerManager : PeerManager = new PeerManager();
     public portalListener : IPortalListener = new PortalListener(this.shareRemoteToLocal, this.peerManager, this.syncPortal);
     public editorListener : EditorListener = new EditorListener(this.bindingStorage);
-    public autoshare : IAutosharer = new Autosharer(this.syncPortal, this.editorManager, this.bufferBindingFactory, this.editorBindingFactory, this.bindingStorage);
+    public fileAgeQuery : IFileAgeQuery = new FileAgeQuery();
+    public autoshare : IAutosharer = new Autosharer(this.syncPortal, this.editorManager, this.bufferBindingFactory, this.editorBindingFactory, this.bindingStorage, this.fileAgeQuery);
 
     constructor(private extensionContext : ExtensionContext, public syncPortal : ISyncPortal, private name : string, public persistent : boolean) {
 

@@ -130,4 +130,11 @@ export class TeletypeSyncPortal extends DelayedListenerExecution<IPortalListener
         throw new Error("Localshare is not supported");
     }
 
+    supportsFileAge(): boolean {
+        return false;
+    }
+    getFileAge(workspace: string, fileid: string): number | null {
+        throw new Error("Method not implemented.");
+    }
+
 }

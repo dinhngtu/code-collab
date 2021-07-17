@@ -15,12 +15,20 @@ export class CachedSyncPortal extends DelayedListenerExecution<IPortalListener> 
         delegate.setListener(this);
     }
 
+    supportsFileAge(): boolean {
+        return this.delegate.supportsFileAge();
+    }
+
+    getFileAge(workspace: string, fileid: string): number | null {
+        return this.delegate.getFileAge(workspace,fileid);
+    }
+
     supportsLocalshare(): boolean {
         return this.delegate.supportsLocalshare();
     }
 
-    shareLocal(workspace: string, fileid: string, initialContent : string): Promise<IEditorSync> {
-        return this.delegate.shareLocal(workspace, fileid, initialContent);
+    shareLocal(workspace: string, fileid: string, initialContent : string, override : boolean): Promise<IEditorSync> {
+        return this.delegate.shareLocal(workspace, fileid, initialContent, override);
     }
 
     isHost(): boolean {

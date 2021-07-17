@@ -4,6 +4,7 @@ import { StringPositionCalculator } from '../../base/stringPositionCalculator';
 import { TextChange, TextChangeType } from '../data/textChange';
 import { IBufferListener } from '../iBufferListener';
 import { IBufferSync } from '../iBufferSync';
+import { IRemoteFile } from './remoteFile';
 import { YTransactionBasedSync } from './yTransactionBasedSync';
 
 export class YBufferSync extends YTransactionBasedSync<IBufferListener> implements IBufferSync {
@@ -12,16 +13,16 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
     private bufferObserver = this.guard(this.onRemoteTextChanged.bind(this));
     private saveObserver = this.guard(this.onRemoteSave.bind(this));
 
-    constructor(doc : Y.Doc, localpeer : string, public buffer : Y.Text, public remoteSaveRequests : Y.Array<string>) {
+    constructor(doc : Y.Doc, localpeer : string, public remoteFile : IRemoteFile) {
         super(doc, localpeer);
-        this.buffer.observe(this.bufferObserver);
-        this.remoteSaveRequests.observe(this.saveObserver);
+        this.remoteFile.buffer.observe(this.bufferObserver);
+        this.remoteFile.saveRequests.observe(this.saveObserver);
         this.initBuffer();
     }
 
     private initBuffer() {
-        if (this.buffer.length > 0) {
-            this.currentText = this.buffer.toString();
+        if (this.remoteFile.buffer.length > 0) {
+            this.currentText = this.remoteFile.buffer.toString();
             let text = ""+this.currentText;
             this.executeOnListener(async (listener) => {
                 listener.onSetText(text);
@@ -53,12 +54,15 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
     }
 
     private onRemoteSave(event : Y.YArrayEvent<string>){
-        this.executeOnListener(async (listener) => {
-            listener.onSave();
-        });
-        this.transact(() => {
-            this.remoteSaveRequests.delete(0, this.remoteSaveRequests.length);
-        });
+        if(this.remoteFile.saveRequests.length>0) {
+          this.remoteFile.lastSave = Date.now();
+          this.executeOnListener(async (listener) => {
+                listener.onSave();
+            });
+            this.transact(() => {
+                this.remoteFile.saveRequests.delete(0, this.remoteFile.saveRequests.length);
+            });
+        }
     } 
 
     private applyChange(change: TextChange) {
@@ -82,28 +86,29 @@ export class YBufferSync extends YTransactionBasedSync<IBufferListener> implemen
     private sendChangeInTransaction(change: TextChange, startIndex: number, endIndex: number) {
         this.transact(() => {
             if (change.type === TextChangeType.DELETE) {
-                this.buffer.delete(startIndex, endIndex - startIndex);
+                this.remoteFile.buffer.delete(startIndex, endIndex - startIndex);
             } else if (change.type === TextChangeType.INSERT) {
-                this.buffer.insert(startIndex, change.text);
+                this.remoteFile.buffer.insert(startIndex, change.text);
             } else if (change.type === TextChangeType.UPDATE) {
                 if (startIndex !== endIndex) {
-                    this.buffer.delete(startIndex, endIndex - startIndex);
+                    this.remoteFile.buffer.delete(startIndex, endIndex - startIndex);
                 }
-                this.buffer.insert(startIndex, change.text);
+                this.remoteFile.buffer.insert(startIndex, change.text);
             }
         });
     }
 
     saveToRemote(): Promise<void> {
         this.transact(() => {
-            this.remoteSaveRequests.push([this.localPeer]);
+            this.remoteFile.lastSave = Date.now();
+            this.remoteFile.saveRequests.push([this.localPeer]);
         });
         return Promise.resolve();
     }
 
     close(): void {
-        this.buffer.unobserve(this.bufferObserver);
-        this.remoteSaveRequests.unobserve(this.saveObserver);
+        this.remoteFile.buffer.unobserve(this.bufferObserver);
+        this.remoteFile.saveRequests.unobserve(this.saveObserver);
     }
 
     dispose() : void {
