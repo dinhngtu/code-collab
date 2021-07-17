@@ -1,53 +1,33 @@
-This repository is a fork of the original repository aimed at providing collaborative editing for code-server. 
+# VSCode and code-server collaboration extension
 
-The following changes will have to be done: 
-- [x] Fixes (the original code still has a few problems, like it not working on windows, text updates only working from Atom not from VSCode and so on)
-- [x] Writing automated tests
-- [x] Porting to code-server if necessary
-- [x] Porting to a different collab provider
-- [x] Improving the UI
-- [ ] Hosting the collab server inside code-server
-- [ ] Automatic connection to code-server and automatic session creation and joining if the same file is edited.
-- [ ] Create a nice readme
+This extension was based on [Rijul5/vscode-teletype](https://github.com/Rijul5/vscode-teletype). It provides collaboration via Teletype and YJS to vscode and [code-server](https://github.com/cdr/code-server). Also if you install [kainzpat14/code-server-collab](https://github.com/kainzpat14/code-server-collab) all users of the same code-server instance and workspace will automatically collaborate with each other. 
 
-# Changes
+Limitatons: 
+  - Only YJS-Websocket is supported, all other YJS communication methods are not supported
+  - Teletype support is limited, it can only share one editor at a time. I do not recommend using it
+  - The plugin will not work if your browser disables webworkers, as most browsers do if you server code-server via http and not https. So please use an https reverse proxy when using code-server.
 
-Upon installing the plugin in vscode or code-server, you will now notice a new "Collaboration" section in the explorer. Here you can connect to new collaboration providers (either YJS Websocket or Teletype). In order to connect to teletype you will have to generate an authorization token on your github account and enter it when prompted. In order to connect to YJS, you will have to host a YJS websocket server as described on the YJS Github page. 
+## Installation
 
-Once connected the tree will show all peers connected to the same collab provider and you will be able see shared files, to share and unshare files, please use the new menu entry in the normal file explorer. 
+In order to install the plugin in code-server or vscode please download the vsix file and put it into your workspace, then right click on it in the vscode/code-server explorer and select "Install Extension VSIX". Then restart vscode or reload your code-server window.
 
-Limitations: 
-- YJS does not provide authentication
-- Teletype is limited, since it can only host one editorproxy at a time, meaning if you share multiple files, only the last shared file will have cursor sync, while content sync works for all files. 
-- When using code server the Teletype access data is stored per workspace and not by user (ie. Browser), since the localstorage provided by vscode is workspace local and not stored in the browser. 
+### Code-Server
+In order to automatically enable collaboration for code-server please follow the instructions on [kainzpat14/code-server-collab](https://github.com/kainzpat14/code-server-collab).
 
-The original readme follows:
+### YJS
+In order to collaborate via an external YJS websocket server, the server has to be hosted as described in [yjs/y-websocket](https://github.com/yjs/y-websocket).
 
-# VS Code Extension with Teletype Libraries (Development in Progress)
-This repository is for the VS Code extension with Teletype libraries. This extension can be executed in Eclipse Che sidecar as a remote plugin. The aim of this extension is to implement the CoEditing skeleton for Eclipse Che and Theia so that contributors can have the experience similar to Google Docs. This skeleton can be further used for mentoring sessions, code reviews, and co-editing.
+### Teletype
+In order to use teletype either host your own server, or generate teletype credentials using [https://teletype.atom.io/login](https://teletype.atom.io/login) and provide them to the plugin when you are asked.
 
-## Running the extension in VS Code
+Please see [Teletype](https://teletype.atom.io/) for the semantics of teletype cooperation. 
 
-- Clone the respository to your local system
-```
-git clone git@github.com:Rijul5/vscode-teletype.git 
-```
+## How to use
 
-- Open terminal and navigate to the cloned respository and use command _code_ in the terminal to launch VS Code.
-```
-code
-```
-<img src="figs/code.png" width="700" height="400" alt="Launch VS Code">
+After installing the plugin make sure the explorer shows the "Collaboration" view and no "Collaboration Connection" view. 
 
-- Inside the editor, press _F5_ to compile and launch your extension in a new _Extension Development Host_ window.
+code-server Collaboration needs no further settings, you do not need to configure or share anything, it should work out of the box.
 
-<img src="figs/window.png" width="700" height="400" alt="Launch VS Code">
+The "Collaboration" view should display a root node named "Connections". Here you can add new connections via the "+" button or via the "Add Collaboration Connection" command. 
 
-- Inside the _Extension Development Host_ window, use command _CTRL + SHIFT + P_ to open the Command Palette and to find the commands associated with this extension.
-
-<img src="figs/command_view.png" width="700" height="400" alt="Launch VS Code">
-
-- Use command _Join Portal_ in the Command Palette to join the session launched be Teletype Host.
-
-<img src="figs/join_portal.png" width="700" height="400" alt="Launch VS Code">
-
+Once you added a connection you should see the remote peers and their shared files. Shared files can be opened via a double click. In order to share or unshare your own files please use the "Share via Collaboration" and "Unshare via Collaboration" commands in the explorer context menu. 
