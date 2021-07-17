@@ -1,13 +1,11 @@
-import { BaseConnector } from "./baseConnector";
 import { IConnector } from "./iConnector";
 import * as vscode from 'vscode';
-import { YSyncPortal } from "../../sync/yjs/ySyncPortal";
-import { WebsocketProvider } from "y-websocket";
 import { removeValueFromArray, unfakeWindow } from "../../base/functions";
 import { input } from "../base/viewFunctions";
 import { ExtensionContext } from "../../extensionContext";
 import { SyncConnection } from "../../binding/syncConnection";
 import { YjsBaseConnector } from "./yjsBaseConnector";
+import { IUserStorage } from "../../storage/iUserStorage";
 
 
 class YjsConnection {
@@ -20,8 +18,8 @@ const CONNECTION_KEY = "yjs.connections";
 
 export class YJSConnector extends YjsBaseConnector implements IConnector {
     
-    constructor(public storage : vscode.Memento, extensionContext : ExtensionContext) {
-        super(extensionContext);
+    constructor(storage : IUserStorage, extensionContext : ExtensionContext) {
+        super(storage, extensionContext);
     }
     
 
@@ -36,34 +34,34 @@ export class YJSConnector extends YjsBaseConnector implements IConnector {
     }
 
     async restoreConnections(): Promise<void> {
-        for(let connection of this.retrieveConnections()) {
+        for(let connection of await this.retrieveConnections()) {
             this.connect(connection.url, connection.room);
         }
     }
 
     async disconnect(connection : SyncConnection) {
         await super.disconnect(connection);
-        var connections = this.retrieveConnections();
+        var connections = await this.retrieveConnections();
         for(let existing of connections) {
             if(existing.url+":"+existing.room === connection.getName()) {
                 removeValueFromArray(connections, existing);
                 break;
             }
         }
-        await this.storage.update(CONNECTION_KEY,connections);
+        await this.storage.store(CONNECTION_KEY,connections);
     }
 
 
     private async store(connection : YjsConnection) : Promise<void> {
-        var connections = this.retrieveConnections();
+        var connections = await this.retrieveConnections();
         connections.push(connection);
-        await this.storage.update(CONNECTION_KEY,connections);
+        await this.storage.store(CONNECTION_KEY,connections);
     }
 
 
 
-    private retrieveConnections() {
-        var connections = this.storage.get<YjsConnection[]>(CONNECTION_KEY);
+    private async retrieveConnections() {
+        var connections = await this.storage.get<YjsConnection[]>(CONNECTION_KEY);
         if (!connections) {
             connections = [];
         }

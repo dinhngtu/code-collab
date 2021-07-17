@@ -9,6 +9,7 @@ import { IColorManager } from "../../color/iColorManager";
 import { ExtensionContext } from "../../extensionContext";
 import { input } from "../base/viewFunctions";
 import { SyncConnection } from "../../binding/syncConnection";
+import { IUserStorage } from "../../storage/iUserStorage";
 
 export class TeletypeConnection {
     public url = 'https://api.teletype.atom.io';
@@ -20,7 +21,7 @@ export class TeletypeConnection {
 
 export class TeletypeConnector extends BaseConnector implements IConnector {
 
-    constructor(public storage : vscode.Memento, extensionContext : ExtensionContext) {
+    constructor(public storage : IUserStorage, extensionContext : ExtensionContext) {
         super(extensionContext);
     }
 
@@ -64,7 +65,7 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
     }
 
     private async inputConnection() {
-        let existingConnections = this.storage.get<TeletypeConnection[]>("teletype.connections");
+        let existingConnections = await this.storage.get<TeletypeConnection[]>("teletype.connections");
         var selectedConnection: TeletypeConnection | undefined;
         if (existingConnections) {
             selectedConnection = await this.selectConnection(existingConnections, selectedConnection);
@@ -80,7 +81,7 @@ export class TeletypeConnector extends BaseConnector implements IConnector {
         let client = await this.connect(selectedConnection!);
 
         if (save) {
-            this.storage.update("teletype.connections", existingConnections);
+            await this.storage.store("teletype.connections", existingConnections);
         }
         return client;
     }

@@ -13,7 +13,7 @@ suite("YSyncPortal", function () {
 
     var listener = instance(listenerClass);
     var doc = new Y.Doc();
-    var syncPortal = new YSyncPortal(doc);
+    var syncPortal = new YSyncPortal(doc, "user");
     syncPortal.setListener(listener);
 
     setup(() => {
@@ -23,7 +23,7 @@ suite("YSyncPortal", function () {
         when(listenerClass.onActivateRemoveFile( anything())).thenReturn(Promise.resolve());
         syncPortal.close();
         doc = new Y.Doc();
-        syncPortal = new YSyncPortal(doc);
+        syncPortal = new YSyncPortal(doc,"user");
         syncPortal.setListener(listener);
     });
 

@@ -15,8 +15,7 @@
 		"Other"
 	],
 	"activationEvents": [
-		"onCommand:extension.addCollabConnection",
-		"onView:extension.collaboration"
+		"*"
 	],
 	"main": "./out/extension.js",
 	"contributes": {
@@ -51,6 +50,12 @@
 				{
 					"id": "extension.collaboration",
 					"name": "Collaboration"
+				},
+				{
+					"type": "webview",
+					"id": "extension.collabConnection",
+					"name": "Collaboration Connector",
+					"when": "!ext.connected"
 				}
 			]
 		},

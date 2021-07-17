@@ -8,6 +8,7 @@ export class ExtensionContext {
     private static defaultContext : ExtensionContext | null = null;
     public isCodeServer : boolean = false;
     public extensionKind : vscode.ExtensionKind = vscode.ExtensionKind.UI;
+    public userid : string | null = null;
 
     public static default() {
         if(!ExtensionContext.defaultContext) {

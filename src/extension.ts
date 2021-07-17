@@ -14,14 +14,14 @@ import { SyncConnection } from './binding/syncConnection';
 import { ConnectionTreeElement } from './view/tree/connectionTreeElement';
 import envPaths from "env-paths";
 import { CodeServerConnector } from './view/connector/codeServerConnector';
+import { FrontendConnectionViewProvider } from './view/frontendConnection/frontendConnectionViewProvider';
+import { UserStorage } from './storage/userStorage';
 
 
 let extensionContext = ExtensionContext.default();
 let shareProvider = new SharingFileDecorationProvider(extensionContext.connectionManager);
 let fileSharer = new FileSharer(extensionContext.connectionManager, shareProvider);
 
-// this method is called when the extension is activated
-// the extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
 	extensionContext.extensionKind = context.extension.extensionKind;
@@ -30,14 +30,27 @@ export function activate(context: vscode.ExtensionContext) {
 	let extensionMode = context.extension.extensionKind === vscode.ExtensionKind.UI ? "UI" : "Backend";
 	console.log("Starting the collaboration extension in mode "+extensionMode+ " CodeServer="+extensionContext.isCodeServer);
 	
+	let webViewProvider = new FrontendConnectionViewProvider(extensionContext);
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider("extension.collabConnection", webViewProvider));
+
 	context.subscriptions.push(vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true}));
 
+	setupExtension(webViewProvider, extensionContext, context.workspaceState);
+
+	console.log("Completed startup");
+}
+
+async function setupExtension(webviewProvider : FrontendConnectionViewProvider, extensionContext : ExtensionContext, workspaceState : vscode.Memento) {
+	webviewProvider.showWebview();
+	await webviewProvider.awaitConnection();
 	vscode.window.registerFileDecorationProvider(new PeerFileDecorationProvider(extensionContext.colorManager));
 	vscode.window.registerFileDecorationProvider(shareProvider);
 
-	let teletypeConnector = new TeletypeConnector(context.workspaceState, extensionContext);
-	let yjsConnector = new YJSConnector(context.workspaceState, extensionContext);
-	let codeServerConnector = new CodeServerConnector(extensionContext);
+	let userStorage = new UserStorage(workspaceState, extensionContext);
+	let teletypeConnector = new TeletypeConnector(userStorage, extensionContext);
+	let yjsConnector = new YJSConnector(userStorage, extensionContext);
+	let codeServerConnector = new CodeServerConnector(userStorage,extensionContext);
 	let multiConnector = new MultiConnector(extensionContext, [yjsConnector, teletypeConnector,codeServerConnector]);
 
 	vscode.window.registerTreeDataProvider("extension.collaboration", new CollaborationTreeDataProvider(extensionContext.connectionManager));
@@ -45,6 +58,7 @@ export function activate(context: vscode.ExtensionContext) {
 	createCommands(multiConnector);
 
 	multiConnector.restoreConnections();
+
 }
 
 

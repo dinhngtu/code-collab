@@ -29,8 +29,8 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     private timedOutPeers = new Set<string>();
     private observers = new Map<Y.AbstractType<any>, any>();
 
-    constructor(public doc : Y.Doc) {
-        super(doc, uuid.v4());
+    constructor(public doc : Y.Doc, public displayName : string) {
+        super(doc, displayName+"("+uuid.v4()+")");
         console.debug("Starting YSyncPortal "+this.localPeer);
         this.peers = doc.getMap("peers");
         this.workspaces = doc.getMap("workspaces");
