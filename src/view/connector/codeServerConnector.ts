@@ -6,6 +6,7 @@ import envPaths = require("env-paths");
 import { config } from "process";
 import * as YAML from 'yaml';
 import * as fs from 'fs';
+import * as http from 'http';
 
 export class CodeServerConnector extends YjsBaseConnector {
 
@@ -22,11 +23,35 @@ export class CodeServerConnector extends YjsBaseConnector {
     async restoreConnections(): Promise<void> {
         if(this.extensionContext.isCodeServer || this.testing) {
             let baseUrl = await this.determineBaseUrl();
-            let connection = await this.connect(baseUrl+"/collab/yjs", "collab", "code-server");
-            connection.autoshare.enable();
+            if(await this.isBackendPluginInstalled(baseUrl)) {
+                let connection = await this.connect(baseUrl+"/collab/yjs", "collab", "code-server");
+                connection.autoshare.enable();
+            } else {
+                console.warn("code-server was detected but cannot be used for collaboration, please install https://github.com/kainzpat14/code-server-collab");
+            }
+            
         } else {
             console.log("Don't connect to code-server, as we are not running on code-server");
         }
+    }
+
+    private isBackendPluginInstalled(baseUrl: string) : Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            let httpBaseUrl = baseUrl.replace("ws://","http://").replace("wss://","https://");
+            let req = http.request(httpBaseUrl+"/collab", (res) => {
+                if(res.statusCode) {
+                    if(res.statusCode < 200 || res.statusCode > 300) {
+                        resolve(false);
+                    }
+                    resolve(true);
+                }
+            });
+            req.on('error', (err) => {
+                console.error(err);
+                resolve(false);
+            });
+            req.end();
+        });
     }
 
     
