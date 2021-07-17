@@ -20,7 +20,11 @@ suite("MemoryToVscodeTest", function () {
     let memorySyncPortal = new MemorySyncPortal();    
     let syncPortal = new CachedSyncPortal(memorySyncPortal, extensionContext, "test");
     let syncConnection = new SyncConnection(extensionContext, syncPortal, "test", false);
-    vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true});
+    try {
+        vscode.workspace.registerFileSystemProvider("collabfs",extensionContext.collabFs, {isCaseSensitive: true});
+    } catch(error) {
+        //in that case we are running with a vscode instance that already has our plugin installed and the provider registered
+    }
 
     suiteSetup(async () => {
         MockableApis.restore();
