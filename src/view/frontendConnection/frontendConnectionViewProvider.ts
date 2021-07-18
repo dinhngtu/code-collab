@@ -51,16 +51,25 @@ export class FrontendConnectionViewProvider implements vscode.WebviewViewProvide
 			</script>
 		</html>`;
         this.view = webviewView;
-		
 	}
 
     async showWebview() {
         vscode.commands.executeCommand("extension.collabConnection.focus");
         if(this.view !== null) {
             this.view.show(true);
+            MockableApis.executor.executeTimeout(() => this.checkIfWebviewHasShown(), 2000);
         } else {
             MockableApis.executor.executeTimeout(() => this.showWebview(), 100);
         }
+    }
+
+    async checkIfWebviewHasShown() {
+        if(this.view !== null && this.extensionContext.userid === null && this.resolver) {
+            console.warn("Appearently webviews don't work, cannot assign userid");
+            this.extensionContext.userid = "unknown";
+            vscode.commands.executeCommand('setContext', 'ext.connected', true);
+            this.resolver();
+        } 
     }
 
 }

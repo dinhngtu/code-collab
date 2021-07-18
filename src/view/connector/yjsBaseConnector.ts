@@ -34,11 +34,15 @@ export abstract class YjsBaseConnector extends BaseConnector {
     }
 
     private async getDisplayName() : Promise<string> {
-        let displayName = await this.storage.get<string>("collab.displayName");
-        if (!displayName) {
-            displayName = await input(async () => await vscode.window.showInputBox({ prompt: 'Please enter a name to use for collaboration' }));
-            await this.storage.store("collab.displayName", displayName);
+        if(this.extensionContext.userid !== "unknown") {
+            let displayName = await this.storage.get<string>("collab.displayName");
+            if (!displayName) {
+                displayName = await input(async () => await vscode.window.showInputBox({ prompt: 'Please enter a name to use for collaboration' }));
+                await this.storage.store("collab.displayName", displayName);
+            }
+            return displayName;
+        } else {
+            return "unknown";
         }
-        return displayName;
     }
 }

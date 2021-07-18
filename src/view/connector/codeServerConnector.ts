@@ -7,6 +7,7 @@ import { config } from "process";
 import * as YAML from 'yaml';
 import * as fs from 'fs';
 import * as http from 'http';
+import * as https from 'https';
 
 export class CodeServerConnector extends YjsBaseConnector {
 
@@ -24,10 +25,11 @@ export class CodeServerConnector extends YjsBaseConnector {
         if(this.extensionContext.isCodeServer || this.testing) {
             let baseUrl = await this.determineBaseUrl();
             if(await this.isBackendPluginInstalled(baseUrl)) {
+                console.log("Connecting to "+baseUrl);
                 let connection = await this.connect(baseUrl+"/collab/yjs", "collab", "code-server");
                 connection.autoshare.enable();
             } else {
-                console.warn("code-server was detected but cannot be used for collaboration, please install https://github.com/kainzpat14/code-server-collab");
+                console.warn("code-server was detected (tried "+baseUrl+") but cannot be used for collaboration, please install https://github.com/kainzpat14/code-server-collab");
             }
             
         } else {
@@ -38,7 +40,8 @@ export class CodeServerConnector extends YjsBaseConnector {
     private isBackendPluginInstalled(baseUrl: string) : Promise<boolean> {
         return new Promise((resolve, reject) => {
             let httpBaseUrl = baseUrl.replace("ws://","http://").replace("wss://","https://");
-            let req = http.request(httpBaseUrl+"/collab", (res) => {
+            var requester: any = this.determineRequester(httpBaseUrl);
+            let req = requester.request(httpBaseUrl+"/collab", (res : any) => {
                 if(res.statusCode) {
                     if(res.statusCode < 200 || res.statusCode > 300) {
                         resolve(false);
@@ -46,7 +49,7 @@ export class CodeServerConnector extends YjsBaseConnector {
                     resolve(true);
                 }
             });
-            req.on('error', (err) => {
+            req.on('error', (err : any) => {
                 console.error(err);
                 resolve(false);
             });
@@ -55,6 +58,15 @@ export class CodeServerConnector extends YjsBaseConnector {
     }
 
     
+
+    private determineRequester(httpBaseUrl: string) {
+        var requester: any = http;
+        if (httpBaseUrl.startsWith("https://")) {
+            requester = https;
+            process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
+        }
+        return requester;
+    }
 
     supportsDisconnect() {
         return false;
@@ -85,10 +97,19 @@ export class CodeServerConnector extends YjsBaseConnector {
             const content = fs.readFileSync(configFile).toString();
             let parsed = YAML.parse(content);
             let address = parsed["bind-addr"] as string;
-            return "ws://"+address.replace("0.0.0.0","127.0.0.1");
+            var protocol = this.parseProtocol(parsed);
+            return protocol+"://"+address.replace("0.0.0.0","127.0.0.1");
         } else {
             throw new Error("Code-server is installed, but could not find config.yaml");
         }
     }
 
+
+    private parseProtocol(parsed: any) {
+        var protocol = "ws";
+        if (parsed["cert"] === true) {
+            protocol = "wss";
+        }
+        return protocol;
+    }
 }
