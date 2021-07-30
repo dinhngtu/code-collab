@@ -4,7 +4,7 @@ import { IPeerListener } from "../sync/iPeerListener";
 import { IPortalListener } from "../sync/iPortalListener";
 import { IRemoteFileListener } from "../sync/iRemoteFileListener";
 import { ISyncPortal } from "../sync/iSyncPortal";
-import { FileAgeQuery } from "../view/sharing/FileAgeQuery";
+import { FileAgeQuery } from "../view/sharing/fileAgeQuery";
 import { IFileAgeQuery } from "../view/sharing/iFileAgeQuery";
 import { Autosharer } from "./autosharer";
 import { BindingStorage } from "./bindingStorage";

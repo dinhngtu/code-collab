@@ -48,12 +48,14 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
     }
 
     private async shareNewFile(uri: Uri, workspace: string) {
-        let document = this.editorManager.getOpenEditor(uri).document;
         var override = await this.determineOverride(workspace, uri);
+        let document = this.editorManager.getOpenEditor(uri).document;
         let editorSync = await this.syncPortal.shareLocal(workspace, uri.fsPath, document.getText(), override);
+        let editor = this.editorManager.getOpenEditor(uri);
         let bufferBinding = this.bufferBindingFactory.createBinding(document, editorSync.getBufferSync(), uri.fsPath);
+        bufferBinding.editor = editor;
         this.bindingStorage.storeBufferBinding(bufferBinding);
-        let editorBinding = this.editorBindingFactory.createBinding(this.editorManager.getOpenEditor(uri), editorSync);
+        let editorBinding = this.editorBindingFactory.createBinding(editor, editorSync);
         this.bindingStorage.storeEditorBinding(editorBinding);
         this.autosharedFiles.set(uri.fsPath, new SharedFile(bufferBinding, editorSync));
         console.debug(uri.fsPath + " is autoshared on workspace " + workspace);
@@ -64,7 +66,7 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
         if (this.syncPortal.supportsFileAge()) {
             let lastSave = this.syncPortal.getFileAge(workspace, uri.fsPath);
             let localChange = MockableApis.filesystem.getLastModifyDate(uri.fsPath);
-            if (!lastSave || localChange > lastSave + 1000) {
+            if (lastSave && localChange > lastSave + 1000) {
                 override = await this.fileAgeQuery.askOverride(uri.fsPath);
             }
         }
