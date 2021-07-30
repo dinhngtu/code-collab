@@ -5,7 +5,7 @@ This extension was based on [Rijul5/vscode-teletype](https://github.com/Rijul5/v
 Limitatons: 
   - Only YJS-Websocket is supported, all other YJS communication methods are not supported
   - Teletype support is limited, it can only share one editor at a time. I do not recommend using it
-  - The plugin will not work if your browser disables webworkers, as most browsers do if you server code-server via http and not https. So please use an https reverse proxy when using code-server.
+  - The plugin will not work if your browser disables webworkers, as most browsers do if you server code-server via http and not https. So please use an https reverse proxy when using code-server. Note that Chrome will even disable service workers if you are using self-signed certificates, please see [StackOverflow](https://stackoverflow.com/questions/38728176/can-you-use-a-service-worker-with-a-self-signed-certificate) on how to circumvent this or simply use firefox.
 
 ## Installation
 
