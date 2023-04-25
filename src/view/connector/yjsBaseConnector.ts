@@ -5,7 +5,6 @@ import * as vscode from 'vscode';
 import { YSyncPortal } from "../../sync/yjs/ySyncPortal";
 import { IUserStorage } from "../../storage/iUserStorage";
 import { ExtensionContext } from "../../extensionContext";
-import { input } from "../base/viewFunctions";
 
 export abstract class YjsBaseConnector extends BaseConnector {
 
@@ -34,13 +33,8 @@ export abstract class YjsBaseConnector extends BaseConnector {
     }
 
     private async getDisplayName() : Promise<string> {
-        if(this.extensionContext.userid !== "unknown") {
-            let displayName = await this.storage.get<string>("collab.displayName");
-            if (!displayName) {
-                displayName = await input(async () => await vscode.window.showInputBox({ prompt: 'Please enter a name to use for collaboration' }));
-                await this.storage.store("collab.displayName", displayName);
-            }
-            return displayName;
+        if(this.extensionContext.userid) {
+            return this.extensionContext.userid;
         } else {
             return "unknown";
         }
