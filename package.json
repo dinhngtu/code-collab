@@ -143,7 +143,7 @@
 		"@types/node": "^10.17.24",
 		"@types/temp": "^0.9.0",
 		"@types/vscode": "^1.56.0",
-		"@vscode/vsce": "~2.15.0",
+		"@vscode/vsce": "^2.19.0",
 		"awesome-typescript-loader": "^5.2.1",
 		"deep-equal": "^1.1.1",
 		"glob": "^7.1.7",
@@ -168,7 +168,7 @@
 		"uuid": "^8.3.2",
 		"ws": "^7.4.5",
 		"y-websocket": "^1.3.15",
-		"yaml": "^1.10.2",
+		"yaml": "^2.2.2",
 		"yjs": "^13.5.6"
 	}
 }
