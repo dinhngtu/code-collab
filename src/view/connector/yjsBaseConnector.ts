@@ -21,7 +21,6 @@ export abstract class YjsBaseConnector extends BaseConnector {
                 let status = event.status;
                 if (status === "connected") {
                     console.debug('Connected to YJS URL ' + yjsUrl + ' and room ' + yjsRoom);
-                    vscode.window.showInformationMessage('Connected to YJS URL ' + yjsUrl + ' and room ' + yjsRoom);
                     resolve();
                 } else {
                     vscode.window.showInformationMessage('Connection YJS URL ' + yjsUrl + ' and room ' + yjsRoom + " (status= " + status+")");
