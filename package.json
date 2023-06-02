@@ -19,32 +19,6 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
-		"commands": [
-			{
-				"command": "extension.addCollabConnection",
-				"title": "Add Collaboration Connection",
-				"icon": {
-					"light": "resources/light/add.svg",
-					"dark": "resources/dark/add.svg"
-				}
-			},
-			{
-				"title": "Remove Collaboration Connection",
-				"command": "extension.removeCollabConnection",
-				"icon": {
-					"light": "resources/light/delete.svg",
-					"dark": "resources/dark/delete.svg"
-				}
-			},
-			{
-				"title": "Share via Collaboration",
-				"command": "extension.shareItem"
-			},
-			{
-				"title": "Unshare via Collaboration",
-				"command": "extension.unshareItem"
-			}
-		],
 		"views": {
 			"explorer": [
 				{
@@ -56,30 +30,6 @@
 					"id": "extension.collabConnection",
 					"name": "Collaboration Connector",
 					"when": "!ext.connected"
-				}
-			]
-		},
-		"menus": {
-			"view/item/context": [
-				{
-					"command": "extension.addCollabConnection",
-					"when": "view == extension.collaboration && viewItem == connections",
-					"group": "inline"
-				},
-				{
-					"command": "extension.removeCollabConnection",
-					"when": "view == extension.collaboration && viewItem == connection",
-					"group": "inline"
-				}
-			],
-			"explorer/context": [
-				{
-					"command": "extension.shareItem",
-					"when": "!explorerResourceIsFolder"
-				},
-				{
-					"command": "extension.unshareItem",
-					"when": "resourcePath in ext.sharedFiles"
 				}
 			]
 		},
