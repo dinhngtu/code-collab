@@ -10,19 +10,19 @@ type EditCallback = () => Promise<void>;
 
 export default class BufferBinding implements IBufferListener {
 	private disposed!: boolean;
-	public editor : vscode.TextEditor | null = null;
+	public editor: vscode.TextEditor | null = null;
 	public editInProgress = false;
 	public disableLocalUpdates = false;
 	public edits = new Queue<EditCallback>();
 
-	constructor(public buffer : vscode.TextDocument, public bufferSync : IBufferSync, public fileName : string) {
+	constructor(public buffer: vscode.TextDocument, public bufferSync: IBufferSync, public fileName: string) {
 		bufferSync.setListener(this);
 		MockableApis.executor.executeCyclic(this.editPoller.bind(this), 100);
 	}
 
 	async editPoller() {
 		//poor mans lock, but typescript is singlethreaded, so it should work
-		if(!this.editInProgress) {
+		if (!this.editInProgress) {
 			this.editInProgress = true;
 			await this.handleEditQueue();
 			this.editInProgress = false;
@@ -30,7 +30,7 @@ export default class BufferBinding implements IBufferListener {
 	}
 
 	private async handleEditQueue() {
-		if(MockableApis.window.visibleTextEditors.includes(this.editor!)) {
+		if (MockableApis.window.visibleTextEditors.includes(this.editor!)) {
 			let edit = this.edits.dequeue();
 			while (edit) {
 				edit();
@@ -60,7 +60,7 @@ export default class BufferBinding implements IBufferListener {
 	async onTextChanges(changes: TextChange[]): Promise<void> {
 		for (let i = changes.length - 1; i >= 0; i--) {
 			const textUpdate = changes[i];
-			this.edits.enqueue(async () => { await this.handleEdit(textUpdate);});
+			this.edits.enqueue(async () => { await this.handleEdit(textUpdate); });
 		}
 	}
 
@@ -101,14 +101,16 @@ export default class BufferBinding implements IBufferListener {
 	}
 
 	async onDidChangeBuffer(changes: readonly vscode.TextDocumentContentChangeEvent[]): Promise<void> {
-		if(!this.disableLocalUpdates) {
-			for(let change of changes) {
+		let l: Promise<void>[] = []
+		if (!this.disableLocalUpdates) {
+			for (let change of changes) {
 				const { start, end } = change.range;
 				let oldStart = new Position(start.line, start.character);
-				let oldEnd = new Position(end.line,end.character);
-				await this.bufferSync.sendChangeToRemote(new TextChange(TextChangeType.UPDATE, oldStart, oldEnd, change.text));
+				let oldEnd = new Position(end.line, end.character);
+				l.push(this.bufferSync.sendChangeToRemote(new TextChange(TextChangeType.UPDATE, oldStart, oldEnd, change.text)));
 			}
 		}
+		await Promise.all(l);
 	}
 
 	requestSavePromise() {
