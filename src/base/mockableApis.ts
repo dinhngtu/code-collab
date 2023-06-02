@@ -7,16 +7,16 @@ import { FileSystem } from "./fileSystem";
 let fsPromises = fs.promises;
 
 export class MockableApis {
-    static executor : ITimedExecutor = new TimedExecutor(); 
-    static fs : any = fs;
-    static window : any = vscode.window;
-    static workspace : any = vscode.workspace;
-    static commands : any = vscode.commands;
-    static fsPromises : any = fsPromises;
+    static executor : ITimedExecutor = new TimedExecutor();
+    static fs : typeof fs = fs;
+    static window : typeof vscode.window = vscode.window;
+    static workspace : typeof vscode.workspace = vscode.workspace;
+    static commands : typeof vscode.commands = vscode.commands;
+    static fsPromises : typeof fs.promises = fsPromises;
     static filesystem : IFileSystem = new FileSystem();
 
     static restore() {
-        MockableApis.executor = new TimedExecutor(); 
+        MockableApis.executor = new TimedExecutor();
         MockableApis.fs = fs;
         MockableApis.window = vscode.window;
         MockableApis.workspace = vscode.workspace;

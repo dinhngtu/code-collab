@@ -12,12 +12,12 @@ import { SharedFile } from "./sharedFile";
 export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventListener {
 	private sharedFiles = new Map<string, SharedFile>();
 
-    constructor(private documentListener : IDocumentListener,  private editorManager : IEditorManager, 
-		private bindingStorage : IBindingStorage, private bufferBindingFactory : IBufferBindingFactory, 
+    constructor(private documentListener : IDocumentListener,  private editorManager : IEditorManager,
+		private bindingStorage : IBindingStorage, private bufferBindingFactory : IBufferBindingFactory,
 		private editorBindingFactory : IEditorBindingFactory,  private syncPortal : ISyncPortal) {
 			this.editorManager.addListener(this);
     }
-    
+
     isShared(uri: vscode.Uri): boolean {
         return this.sharedFiles.has(uri.fsPath);
     }
@@ -32,7 +32,7 @@ export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventL
 		if(this.editorManager.isOpen(uri)) {
 			let editor = this.editorManager.getOpenEditor(uri);
             this.onLocalFileOpened(editor);
-		} 
+		}
 		this.initializeTextToRemote(buffer);
     }
 
@@ -44,7 +44,7 @@ export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventL
 			this.sharedFiles.delete(uri.fsPath);
 		}
     }
-    
+
     async onLocalFileOpened(editor: vscode.TextEditor): Promise<void> {
         let sharedFile = this.sharedFiles.get(editor.document.uri.fsPath);
         if(sharedFile) {
@@ -57,7 +57,7 @@ export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventL
 				this.bindingStorage.deleteEditorBinding(editorBinding);
 			}
             this.bindingStorage.storeEditorBinding(editorBinding);
-        }   
+        }
     }
 
 
@@ -82,7 +82,7 @@ export class ShareLocalToRemote implements IShareLocalToRemote, IWorkspaceEventL
 			]
 		});
 	}
-    
+
     private closeSharedFileConnection(sharedFile: SharedFile) {
 		let bufferSync = sharedFile.bufferBinding.bufferSync;
 

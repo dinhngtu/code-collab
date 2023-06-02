@@ -14,7 +14,7 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
 
     private enabled : boolean = false;
     private autosharedFiles = new Map<string, SharedFile>();
-    constructor(private syncPortal : ISyncPortal,  private editorManager : IEditorManager, private bufferBindingFactory : IBufferBindingFactory, private editorBindingFactory : IEditorBindingFactory, private bindingStorage : IBindingStorage, 
+    constructor(private syncPortal : ISyncPortal,  private editorManager : IEditorManager, private bufferBindingFactory : IBufferBindingFactory, private editorBindingFactory : IEditorBindingFactory, private bindingStorage : IBindingStorage,
         private fileAgeQuery : IFileAgeQuery) {
     }
 
@@ -31,9 +31,9 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
                 }
                 this.editorManager.addListener(this);
             }, 500);
-            
+
         }
-        
+
     }
 
     async autoshareIfEnabled(workspace: string, uri: Uri): Promise<void> {
@@ -43,7 +43,7 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
             } else {
                 await this.shareNewFile(uri, workspace);
             }
-            
+
         }
     }
 
@@ -99,7 +99,7 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
     }
 
     private getWorkspace(editor : TextEditor) : string | null {
-        let workspaceFolders : ReadonlyArray<WorkspaceFolder> = MockableApis.workspace.workspaceFolders;
+        let workspaceFolders : ReadonlyArray<WorkspaceFolder> = MockableApis.workspace.workspaceFolders || [];
         for(let folder of workspaceFolders) {
             if(editor.document.uri.fsPath.startsWith(folder.uri.fsPath)) {
                 return folder.uri.fsPath;

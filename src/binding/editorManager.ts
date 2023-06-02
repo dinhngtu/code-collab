@@ -53,14 +53,14 @@ export class EditorManager implements IEditorManager {
 	async onDidChangeActiveTextEditor (event : vscode.TextEditor | undefined) {
 		if(event) {
 			this.setEditorAsOpen(event);
-	
+
 			this.executeOnListeners((listener) => {
 				listener.onLocalFileOpened(event);
 			});
 		}
 	}
 
-	onDidChangeVisibleTextEditors(editors : vscode.TextEditor[]) {
+	onDidChangeVisibleTextEditors(editors : readonly vscode.TextEditor[]) {
 		for(let editor of this.bindingStorage.getEditors()) {
 			if(!editors.includes(editor)) {
 				let editorSync = this.bindingStorage.findEditorSyncByEditor(editor)!;
@@ -93,7 +93,7 @@ export class EditorManager implements IEditorManager {
 		}
 	}
 
-	
+
 
     private async getOrCreateEditor(buffer : vscode.TextDocument) : Promise<vscode.TextEditor> {
 		if(this.isOpen(buffer.uri)) {
