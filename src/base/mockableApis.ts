@@ -4,16 +4,17 @@ import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { IFileSystem } from "./iFileSystem";
 import { FileSystem } from "./fileSystem";
+import { ExtensionContext } from "../extensionContext";
 let fsPromises = fs.promises;
 
 export class MockableApis {
-    static executor : ITimedExecutor = new TimedExecutor();
-    static fs : typeof fs = fs;
-    static window : typeof vscode.window = vscode.window;
-    static workspace : typeof vscode.workspace = vscode.workspace;
-    static commands : typeof vscode.commands = vscode.commands;
-    static fsPromises : typeof fs.promises = fsPromises;
-    static filesystem : IFileSystem = new FileSystem();
+    static executor: ITimedExecutor = new TimedExecutor();
+    static fs: typeof fs = fs;
+    static window: typeof vscode.window = vscode.window;
+    static workspace: typeof vscode.workspace = vscode.workspace;
+    static commands: typeof vscode.commands = vscode.commands;
+    static fsPromises: typeof fs.promises = fsPromises;
+    static filesystem: IFileSystem = new FileSystem();
 
     static restore() {
         MockableApis.executor = new TimedExecutor();
@@ -22,5 +23,9 @@ export class MockableApis {
         MockableApis.workspace = vscode.workspace;
         MockableApis.commands = vscode.commands;
         MockableApis.fsPromises = fsPromises;
+    }
+
+    static log(s: string) {
+        console.debug(ExtensionContext.default().userid + ' ' + s);
     }
 }

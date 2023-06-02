@@ -15,15 +15,17 @@ export class DocumentListener implements IDocumentListener{
     }
 
     public onDidChangeTextDocument (event : vscode.TextDocumentChangeEvent) {
-		console.log("Handling change event: "+event);
+		let reason = (<any>event).reason;
+		MockableApis.log(`Change ${reason} dirty:${event.document.isDirty} count:${event.contentChanges.length}`);
 		const bufferBinding = this.bindingStorage.findBufferBindingByBuffer(event.document);
 		if (bufferBinding) {
-			console.log("Calling binding for change event: "+event);
-			bufferBinding.onDidChangeBuffer(event.contentChanges);
+			MockableApis.log("Calling binding");
+			bufferBinding.onDidChangeBuffer(event);
 		}
 	}
 
     private saveDocument (event : vscode.TextDocumentWillSaveEvent) {
+		MockableApis.log("saveDocument");
 		const bufferBinding = this.bindingStorage.findBufferBindingByBuffer(event.document);
 		if (bufferBinding) {
 			event.waitUntil(bufferBinding.requestSavePromise());
