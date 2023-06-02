@@ -28,7 +28,7 @@ export default class BufferBinding implements IBufferListener {
 			this.editInProgress = false;
 		}
 	}
-	
+
 	private async handleEditQueue() {
 		if(MockableApis.window.visibleTextEditors.includes(this.editor!)) {
 			let edit = this.edits.dequeue();
@@ -63,7 +63,7 @@ export default class BufferBinding implements IBufferListener {
 			this.edits.enqueue(async () => { await this.handleEdit(textUpdate);});
 		}
 	}
-	
+
 	private async tryPerformUpdate(textUpdate: TextChange, range: vscode.Range) {
 		this.disableLocalUpdates = true;
 		let result = await new Promise<boolean>((resolve, reject) => {
@@ -100,13 +100,13 @@ export default class BufferBinding implements IBufferListener {
 		);
 	}
 
-	onDidChangeBuffer(changes: readonly vscode.TextDocumentContentChangeEvent[]) {
+	async onDidChangeBuffer(changes: readonly vscode.TextDocumentContentChangeEvent[]): Promise<void> {
 		if(!this.disableLocalUpdates) {
 			for(let change of changes) {
 				const { start, end } = change.range;
 				let oldStart = new Position(start.line, start.character);
 				let oldEnd = new Position(end.line,end.character);
-				this.bufferSync.sendChangeToRemote(new TextChange(TextChangeType.UPDATE, oldStart, oldEnd, change.text));
+				await this.bufferSync.sendChangeToRemote(new TextChange(TextChangeType.UPDATE, oldStart, oldEnd, change.text));
 			}
 		}
 	}
