@@ -18,19 +18,19 @@ import { IShareLocalToRemote } from "./iShareLocalToRemote";
 import { ShareLocalToRemote } from "./shareLocalToRemote";
 
 export class PortalListener implements IPortalListener {
-    
+
 
     constructor(private remoteFileListener : IRemoteFileListener, private peerListener : IPeerListener, private syncPortal : ISyncPortal) {
         syncPortal.setListener(this);
     }
-    
-    
+
+
     onOpenRemoteFile(peer: string, uniqueUri: string, fileUri: Uri, editorSync: IEditorSync): Promise<void> {
         return this.remoteFileListener.onOpenRemoteFile(peer,uniqueUri, fileUri, editorSync);
     }
 
     onActivateRemoveFile(editorSync: IEditorSync): Promise<void> {
-        console.log("Ignoring activate, only used by other editors such as atom");
+        console.debug("Ignoring activate, only used by other editors such as atom");
         return Promise.resolve();
     }
 

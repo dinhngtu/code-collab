@@ -67,7 +67,7 @@ export class CollaborationFs implements vscode.FileSystemProvider {
     constructor(public urlBase : string) {
 
     }
-    
+
     registerBufferCache(providertype : string, provider : string, uri : string, cache : BufferCache) : vscode.Uri {
         let lowerprovidertype = providertype.toLowerCase();
         let lowerprovider = provider.toLowerCase().replace(/\//g,"_");
@@ -86,7 +86,7 @@ export class CollaborationFs implements vscode.FileSystemProvider {
         cache.setCacheListener(() => {
             current.entries.delete(filename);
             this._fireSoon({
-                type: vscode.FileChangeType.Deleted, 
+                type: vscode.FileChangeType.Deleted,
                 uri: fileUri
             });
         });
@@ -127,11 +127,11 @@ export class CollaborationFs implements vscode.FileSystemProvider {
     }
 
     writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
-        console.log("Doing nothing during write of remote file, the remote file is probably just told to save");
+        console.debug("Doing nothing during write of remote file, the remote file is probably just told to save");
         let file = this._lookupAsFile(uri, false);
         if(!file) {
             throw new Error("Cannot interact with not (any longer) existing remote file");
-        } 
+        }
         if(file.isClosed()) {
             throw new Error("Remote file is closed");
         }

@@ -6,7 +6,7 @@ import { SyncConnection } from "../../binding/syncConnection";
 export class ConnectionTreeElement extends vscode.TreeItem implements ICollaborationTreeElement {
     constructor(public connection : SyncConnection) {
         super(connection.getName() + " ("+connection.getType()+")", connection.peerManager.peers.length === 0?vscode.TreeItemCollapsibleState.None:vscode.TreeItemCollapsibleState.Expanded);
-        console.log(JSON.stringify(this.iconPath));
+        console.debug(JSON.stringify(this.iconPath));
         this.setContextVaue();
     }
 

@@ -7,7 +7,7 @@ export class FrontendConnectionViewProvider implements vscode.WebviewViewProvide
     public resolver : (() => void) | null = null;
 
 	constructor(public extensionContext : ExtensionContext) {
-        
+
     }
 
     awaitConnection() : Promise<void> {
@@ -29,7 +29,7 @@ export class FrontendConnectionViewProvider implements vscode.WebviewViewProvide
 		};
 		webviewView.webview.onDidReceiveMessage(data => {
 			if(data.type === "connection") {
-                console.log("Got connection event from frontend by userid "+data.userid);
+                console.debug("Got connection event from frontend by userid "+data.userid);
 				vscode.commands.executeCommand('setContext', 'ext.connected', true);
                 this.extensionContext.userid = data.userid;
                 if(this.resolver !== null) {
@@ -46,7 +46,7 @@ export class FrontendConnectionViewProvider implements vscode.WebviewViewProvide
                 if(!userid) {
                     userid = "`+newUid+`";
                     window.localStorage.setItem("userid",userid);
-                } 
+                }
                 vscode.postMessage({type: "connection", userid: userid});
 			</script>
 		</html>`;
@@ -69,7 +69,7 @@ export class FrontendConnectionViewProvider implements vscode.WebviewViewProvide
             this.extensionContext.userid = "unknown";
             vscode.commands.executeCommand('setContext', 'ext.connected', true);
             this.resolver();
-        } 
+        }
     }
 
 }

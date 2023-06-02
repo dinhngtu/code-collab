@@ -15,7 +15,7 @@ const noneUri = vscode.Uri.parse("none://");
 const timeout = 30*1000;
 
 type PeerAndKey = {
-    peer : string, 
+    peer : string,
     key : string
 };
 
@@ -52,7 +52,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     getType(): string {
         return "YJS";
     }
-    
+
     private onPeerEvent(event : Y.YMapEvent<Y.Map<Y.Map<any>>>) {
         for(let changedKey of event.keysChanged) {
             let change = event.changes.keys.get(changedKey);
@@ -71,7 +71,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     private onPeerAdded(peer : string, files : Y.Map<Y.Map<any>>) {
         console.debug("Adding peer "+peer);
-        
+
         if(peer === this.localPeer) {
             console.debug("Added myself, not doing anything");
         }
@@ -79,7 +79,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
             this.executeOnListener(async (listener) => {
                 listener.onPeerJoined(peer);
             });
-    
+
             for(let fileName of files.keys()) {
                 this.onFileAdded(peer, fileName, files.get(fileName)!);
             }
@@ -90,7 +90,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     private addObserverForFileList(peer: string, files: Y.Map<Y.Map<any>>) {
         let observerId = uuid.v4();
         let observer = this.guard((event: Y.YMapEvent<Y.Map<any>>) => {
-            console.log("Observe from id "+observerId);
+            console.debug("Observe from id "+observerId);
             this.onFilesChanged(peer, event);
         });
         if(this.observers.has(files)) {
@@ -111,7 +111,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
             this.executeOnListener(async (listener) => {
                 listener.onPeerLeft(peer);
             });
-    
+
             let peerFiles = this.editorSyncsByPeerAndFile.get(peer);
             if(peerFiles) {
                 for(let fileName of peerFiles.keys()) {
@@ -119,7 +119,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
                 }
             }
         }
-        
+
     }
 
     private async handleKeepAlive() {
@@ -151,11 +151,11 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
             console.debug("Handling "+change.action+" for file "+changedKey+"@"+peer);
             if(change.action === "delete" || change.action === "update") {
                 await this.onFileDeleted(peer, changedKey);
-            } 
+            }
 
             if(change.action === "add" || change.action === "update") {
                 await this.onFileAdded(peer, changedKey, this.peers.get(peer)!.get(changedKey)!);
-            } 
+            }
         }
     }
 
@@ -213,7 +213,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
 
     private getEditorSync(peer : string, key : string, file : IRemoteFile) : IEditorSync {
         this.addPeerCache(peer);
-        if(!this.editorSyncsByPeerAndFile.get(peer)!.has(key)) {    
+        if(!this.editorSyncsByPeerAndFile.get(peer)!.has(key)) {
             this.createNewEditorSync(file, peer, key);
         }
         return this.editorSyncsByPeerAndFile.get(peer)!.get(key)!;
@@ -248,7 +248,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
                 if(peerAndKey.peer === this.localPeer) {
                     this.me.delete(peerAndKey.key);
                 }
-                
+
             }
         });
     }
@@ -289,7 +289,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     supportsLocalshare(): boolean {
         return true;
     }
-    
+
     async shareLocal(workspace: string, fileid: string, initialContent : string, override : boolean): Promise<IEditorSync> {
         this.createWorkspaceIfNotExists(workspace);
 
@@ -301,7 +301,7 @@ export class YSyncPortal extends YTransactionBasedSync<IPortalListener> implemen
     supportsFileAge(): boolean {
         return true;
     }
-    
+
     getFileAge(workspace: string, fileid: string): number | null {
         if (this.workspaces.has(workspace)) {
             let workspaceEntry = this.workspaces.get(workspace)!;

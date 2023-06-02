@@ -25,15 +25,15 @@ export class CodeServerConnector extends YjsBaseConnector {
         if(this.extensionContext.isCodeServer || this.testing) {
             let baseUrl = await this.determineBaseUrl();
             if(await this.isBackendPluginInstalled(baseUrl)) {
-                console.log("Connecting to "+baseUrl);
+                console.debug("Connecting to "+baseUrl);
                 let connection = await this.connect(baseUrl+"/collab/yjs", "collab", "code-server");
                 connection.autoshare.enable();
             } else {
                 console.warn("code-server was detected (tried "+baseUrl+") but cannot be used for collaboration, please install https://github.com/kainzpat14/code-server-collab");
             }
-            
+
         } else {
-            console.log("Don't connect to code-server, as we are not running on code-server");
+            console.debug("Don't connect to code-server, as we are not running on code-server");
         }
     }
 
@@ -57,7 +57,7 @@ export class CodeServerConnector extends YjsBaseConnector {
         });
     }
 
-    
+
 
     private determineRequester(httpBaseUrl: string) {
         var requester: any = http;

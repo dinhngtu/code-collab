@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
 	determineCodeServer(context);
 
 	let extensionMode = context.extension.extensionKind === vscode.ExtensionKind.UI ? "UI" : "Backend";
-	console.log("Starting the collaboration extension in mode "+extensionMode+ " CodeServer="+extensionContext.isCodeServer);
+	console.debug("Starting the collaboration extension in mode "+extensionMode+ " CodeServer="+extensionContext.isCodeServer);
 
 	let webViewProvider = new FrontendConnectionViewProvider(extensionContext);
 	context.subscriptions.push(
@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	setupExtension(webViewProvider, extensionContext, context.workspaceState);
 
-	console.log("Completed startup");
+	console.debug("Completed startup");
 }
 
 async function setupExtension(webviewProvider : FrontendConnectionViewProvider, extensionContext : ExtensionContext, workspaceState : vscode.Memento) {
