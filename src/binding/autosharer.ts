@@ -77,6 +77,8 @@ export class Autosharer implements IAutosharer, IWorkspaceEventListener {
         let editor = this.editorManager.getOpenEditor(uri);
         let sharedFile = this.autosharedFiles.get(uri.fsPath)!;
         sharedFile.bufferBinding.editor = editor;
+        sharedFile.bufferBinding.buffer = editor.document;
+        this.bindingStorage.storeBufferBinding(sharedFile.bufferBinding);
         let editorBinding = this.bindingStorage.findEditorBindingBySync(sharedFile.editorSync);
         if(editorBinding) {
             this.bindingStorage.deleteEditorBinding(editorBinding);
