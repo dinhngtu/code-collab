@@ -111,16 +111,31 @@ export default class BufferBinding implements IBufferListener {
 
 	async onDidChangeBuffer(event: vscode.TextDocumentChangeEvent): Promise<void> {
 		let l: Promise<void>[] = [];
-
 		let toSend = [...event.contentChanges];
-		const externalCond = !event.document.isDirty && event.contentChanges.length == 1;
-		if (!this.disableLocalUpdates && externalCond && !this.externalFlag) {
+
+		/*
+		 * see convention:
+		 * lf1: local update, not dirty, 1 change
+		 * lt0: local update, dirty, 0 change
+		 *
+		 * replication algorithm is as follows:
+		 * lf1 + lt0 -> commit (this is a manual edit)
+		 * lf1 + lf1 -> lf1 (since lf1 can fire many times in a row from multiple external changes)
+		 * lf1 + X (otherwise) -> drop
+		 */
+		if (!this.disableLocalUpdates && !event.document.isDirty && event.contentChanges.length == 1) {
 			// by experience, during saves event.contentChanges.length always equals 1
 			this.externalFlag = true;
 			this.changeBuffer = toSend;
 			toSend = [];
-		} else if (externalCond && this.externalFlag) {
-			MockableApis.log("dropping buffered events");
+		} else if (this.externalFlag) {
+			if (!this.disableLocalUpdates && event.document.isDirty && event.contentChanges.length == 0) {
+				MockableApis.log("committing buffered events");
+				for (let change of this.changeBuffer) {
+					MockableApis.log(`change: ${JSON.stringify(change)}`);
+					l.push(this.pushChange(change));
+				}
+			}
 			this.externalFlag = false;
 			this.changeBuffer = [];
 		}
@@ -130,14 +145,6 @@ export default class BufferBinding implements IBufferListener {
 				MockableApis.log(`change: ${JSON.stringify(change)}`);
 				l.push(this.pushChange(change));
 			}
-		} else {
-			MockableApis.log("local updates disabled");
-			for (let change of this.changeBuffer) {
-				MockableApis.log(`flushing buffered change: ${JSON.stringify(change)}`);
-				l.push(this.pushChange(change));
-			}
-			this.externalFlag = false;
-			this.changeBuffer = [];
 		}
 
 		await Promise.all(l);
