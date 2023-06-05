@@ -130,9 +130,9 @@ export default class BufferBinding implements IBufferListener {
 			toSend = [];
 		} else if (this.externalFlag) {
 			if (!this.disableLocalUpdates && event.document.isDirty && event.contentChanges.length == 0) {
-				MockableApis.log("committing buffered events");
+				//MockableApis.log("committing buffered events");
 				for (let change of this.changeBuffer) {
-					MockableApis.log(`change: ${JSON.stringify(change)}`);
+					//MockableApis.log(`change: ${JSON.stringify(change)}`);
 					l.push(this.pushChange(change));
 				}
 			}
@@ -142,7 +142,7 @@ export default class BufferBinding implements IBufferListener {
 
 		if (!this.disableLocalUpdates) {
 			for (let change of toSend) {
-				MockableApis.log(`change: ${JSON.stringify(change)}`);
+				//MockableApis.log(`change: ${JSON.stringify(change)}`);
 				l.push(this.pushChange(change));
 			}
 		}
@@ -152,7 +152,7 @@ export default class BufferBinding implements IBufferListener {
 
 	async requestSavePromise(): Promise<void> {
 		for (let change of this.changeBuffer) {
-			MockableApis.log(`flushing buffered change: ${JSON.stringify(change)}`);
+			//MockableApis.log(`flushing buffered change: ${JSON.stringify(change)}`);
 			await this.pushChange(change);
 		}
 		this.externalFlag = false;
