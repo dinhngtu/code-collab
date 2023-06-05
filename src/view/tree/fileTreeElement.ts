@@ -6,21 +6,21 @@ import { IEditorSync } from "../../sync/iEditorSync";
 import { SyncConnection } from "../../binding/syncConnection";
 
 export class FileTreeElement extends vscode.TreeItem implements ICollaborationTreeElement {
-    constructor(public syncConnection : SyncConnection, public editorSync : IEditorSync, public binding : BufferBinding) {
+    constructor(public syncConnection: SyncConnection, public editorSync: IEditorSync, public binding: BufferBinding) {
         super(binding.fileName);
         this.command = {
-            command: "extension.openCollabFile", 
+            command: "extension.openCollabFile",
             arguments: [
-                syncConnection, 
+                syncConnection,
                 editorSync
-            ], 
-            title: "Open Remote File "+binding.fileName
+            ],
+            title: "Open Remote File " + binding.fileName
         };
     }
 
     iconPath = {
-        light: path.join(__filename, '..','..','..','..',   'resources', 'light', 'file.svg'),
-        dark: path.join(__filename, '..','..','..','..',  'resources', 'dark', 'file.svg')
+        light: path.join(__filename, '..', '..', 'resources', 'light', 'file.svg'),
+        dark: path.join(__filename, '..', '..', 'resources', 'dark', 'file.svg')
     };
 
     contextValue = "file";
