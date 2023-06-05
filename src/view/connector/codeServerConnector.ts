@@ -1,13 +1,12 @@
 import { SyncConnection } from "../../binding/syncConnection";
-import { BaseConnector } from "./baseConnector";
 import * as vscode from 'vscode';
 import { YjsBaseConnector } from "./yjsBaseConnector";
 import envPaths from "env-paths";
-import { config } from "process";
 import * as YAML from 'yaml';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
+import { URL } from "url";
 
 export class CodeServerConnector extends YjsBaseConnector {
 
@@ -18,18 +17,18 @@ export class CodeServerConnector extends YjsBaseConnector {
     }
 
     getName(): string {
-        throw new Error("code-server");
+        return "code-server";
     }
 
     async restoreConnections(): Promise<void> {
-        if(this.extensionContext.isCodeServer || this.testing) {
-            let baseUrl = await this.determineBaseUrl();
-            if(await this.isBackendPluginInstalled(baseUrl)) {
-                console.debug("Connecting to "+baseUrl);
-                let connection = await this.connect(baseUrl+"/collab/yjs", "collab", "code-server");
+        if (this.extensionContext.isCodeServer || this.testing) {
+            let baseUrl = this.determineBaseUrl();
+            if (await this.isBackendPluginInstalled(baseUrl)) {
+                console.debug("Connecting to " + baseUrl);
+                let connection = await this.connect(baseUrl + "/collab/yjs", "collab", "code-server");
                 connection.autoshare.enable();
             } else {
-                console.warn("code-server was detected (tried "+baseUrl+") but cannot be used for collaboration, please install https://github.com/kainzpat14/code-server-collab");
+                console.warn("code-server was detected (tried " + baseUrl + ") but cannot be used for collaboration, please install https://github.com/kainzpat14/code-server-collab");
             }
 
         } else {
@@ -37,35 +36,23 @@ export class CodeServerConnector extends YjsBaseConnector {
         }
     }
 
-    private isBackendPluginInstalled(baseUrl: string) : Promise<boolean> {
+    private isBackendPluginInstalled(baseUrl: string): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            let httpBaseUrl = baseUrl.replace("ws://","http://").replace("wss://","https://");
-            var requester: any = this.determineRequester(httpBaseUrl);
-            let req = requester.request(httpBaseUrl+"/collab", (res : any) => {
-                if(res.statusCode) {
-                    if(res.statusCode < 200 || res.statusCode > 300) {
+            let [requester, url, options] = this.getBackendTester();
+            let req = requester.request(url, options, (res: any) => {
+                if (res.statusCode) {
+                    if (res.statusCode < 200 || res.statusCode > 300) {
                         resolve(false);
                     }
                     resolve(true);
                 }
             });
-            req.on('error', (err : any) => {
+            req.on('error', (err: any) => {
                 console.error(err);
                 resolve(false);
             });
             req.end();
         });
-    }
-
-
-
-    private determineRequester(httpBaseUrl: string) {
-        var requester: any = http;
-        if (httpBaseUrl.startsWith("https://")) {
-            requester = https;
-            process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0";
-        }
-        return requester;
     }
 
     supportsDisconnect() {
@@ -76,40 +63,52 @@ export class CodeServerConnector extends YjsBaseConnector {
         return false;
     }
 
-    async disconnect(syncConnection : SyncConnection) {
+    async disconnect(syncConnection: SyncConnection) {
         throw new Error("Delete not supported");
     }
 
-    private async determineBaseUrl() {
+    private determineBaseUrl() {
         let baseUrl;
-        if (this.extensionContext.extensionKind === vscode.ExtensionKind.Workspace || this.testing) {
-            baseUrl = await this.parseBaseUrl();
+        if (process.env.CODE_COLLAB_BASEURL) {
+            baseUrl = process.env.CODE_COLLAB_BASEURL;
+        } else if (this.extensionContext.extensionKind === vscode.ExtensionKind.Workspace || this.testing) {
+            let paths = envPaths("code-server", { suffix: "" });
+            let configFile = paths.config + "/config.yaml";
+            if (fs.existsSync(configFile)) {
+                const content = fs.readFileSync(configFile).toString();
+                let parsed = YAML.parse(content);
+                let address = parsed["bind-addr"] as string;
+                var protocol = "ws";
+                if (parsed["cert"] === true) {
+                    protocol = "wss";
+                }
+                baseUrl = protocol + "://" + address.replace("0.0.0.0", "127.0.0.1");
+            } else {
+                throw new Error("Code-server is installed, but could not find config.yaml");
+            }
         } else {
-            baseUrl = window.location.protocol.replace("http","ws") + '//' + window.location.host + window.location.pathname;
+            baseUrl = window.location.protocol.replace("http", "ws") + '//' + window.location.host + window.location.pathname;
         }
         return baseUrl;
     }
 
-    private async parseBaseUrl(): Promise<string> {
-        let paths = envPaths("code-server",{suffix: ""});
-        let configFile = paths.config+"/config.yaml";
-        if(fs.existsSync(configFile)) {
-            const content = fs.readFileSync(configFile).toString();
-            let parsed = YAML.parse(content);
-            let address = parsed["bind-addr"] as string;
-            var protocol = this.parseProtocol(parsed);
-            return protocol+"://"+address.replace("0.0.0.0","127.0.0.1");
+    private getBackendTester(): [typeof http | typeof https, string | URL, https.RequestOptions] {
+        let baseUrl = new URL(this.determineBaseUrl());
+        if (baseUrl.protocol == "ws+unix:") {
+            let options = {
+                socketPath: baseUrl.pathname.split(":")[0],
+            };
+            return [http, "http://localhost/collab", options];
         } else {
-            throw new Error("Code-server is installed, but could not find config.yaml");
+            let requester: typeof http | typeof https;
+            if (baseUrl.protocol == "ws:") {
+                requester = http;
+                baseUrl.protocol = "http:"
+            } else {
+                requester = https;
+                baseUrl.protocol = "https:"
+            }
+            return [requester, new URL("/collab", baseUrl), {}];
         }
-    }
-
-
-    private parseProtocol(parsed: any) {
-        var protocol = "ws";
-        if (parsed["cert"] === true) {
-            protocol = "wss";
-        }
-        return protocol;
     }
 }
