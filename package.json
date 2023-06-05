@@ -3,7 +3,7 @@
 	"displayName": "vscode-collab",
 	"description": "VS Code/Code Server Collaboration extension",
 	"publisher": "dinhngtu",
-	"version": "0.0.1",
+	"version": "0.1.0",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/Rijul5/vscode-teletype.git"
