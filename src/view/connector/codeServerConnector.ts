@@ -38,7 +38,7 @@ export class CodeServerConnector extends YjsBaseConnector {
 
     private isBackendPluginInstalled(baseUrl: string): Promise<boolean> {
         return new Promise((resolve, reject) => {
-            let [requester, url, options] = this.getBackendTester();
+            let [requester, url, options] = this.getBackendTester(baseUrl);
             let req = requester.request(url, options, (res: any) => {
                 if (res.statusCode) {
                     if (res.statusCode < 200 || res.statusCode > 300) {
@@ -92,8 +92,8 @@ export class CodeServerConnector extends YjsBaseConnector {
         return baseUrl;
     }
 
-    private getBackendTester(): [typeof http | typeof https, string | URL, https.RequestOptions] {
-        let baseUrl = new URL(this.determineBaseUrl());
+    private getBackendTester(_baseUrl: string): [typeof http | typeof https, string | URL, https.RequestOptions] {
+        let baseUrl = new URL(_baseUrl);
         if (baseUrl.protocol == "ws+unix:") {
             let options = {
                 socketPath: baseUrl.pathname.split(":")[0],
