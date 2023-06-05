@@ -151,10 +151,8 @@ export default class BufferBinding implements IBufferListener {
 	}
 
 	async requestSavePromise(): Promise<void> {
-		for (let change of this.changeBuffer) {
-			//MockableApis.log(`flushing buffered change: ${JSON.stringify(change)}`);
-			await this.pushChange(change);
-		}
+		// any lf1 change should have been committed right afterwards by a lt0
+		// anything remaining by then is 100% spurious, so drop them
 		this.externalFlag = false;
 		this.changeBuffer = [];
 		await this.bufferSync.saveToRemote();
