@@ -8,3 +8,9 @@ vsc-extension-quickstart.md
 **/tslint.json
 **/*.map
 **/*.ts
+.github/**
+node_modules/**
+figs/**
+devfile.yaml
+.env
+.env.*

@@ -1,6 +1,6 @@
 import * as path from 'path';
+import fetch from 'node-fetch';
 const globalAny: any = global;
-const fetch = require('node-fetch');
 
 export function fileUrl(str : string) {
     var pathName = path.resolve(str).replace(/\\/g, '/');

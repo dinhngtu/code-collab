@@ -2,7 +2,7 @@ import { SyncConnection } from "../../binding/syncConnection";
 import { BaseConnector } from "./baseConnector";
 import * as vscode from 'vscode';
 import { YjsBaseConnector } from "./yjsBaseConnector";
-import envPaths = require("env-paths");
+import envPaths from "env-paths";
 import { config } from "process";
 import * as YAML from 'yaml';
 import * as fs from 'fs';
